@@ -4,10 +4,17 @@ import token.*;
 
 /** The Lexical Analyzer Class */
 public class Tokenizer {
+	/** Maximum length of an identifier. */
+	private static final int MAX_LENGTH = 64;
+	
 	/** A table for identifying reserved words */
 	private KeywordTable keywordTable;
+	/** An object to identify characters */
+	private Classification classification;
+	
 	/** Charstream used to get characters from the input */
 	private CharStream charStream;
+	
 	/** Token kept for lookbehind. Needed to identify unary operators */
 	private Token previousToken;
 	/** Buffer to store lexemes (characters encountered so far)*/
@@ -16,13 +23,13 @@ public class Tokenizer {
 	private char currentChar;
 	/** State of the machine */
 	private int state; 
-	/** Maximum length of an identifier. */
-	private static final int MAX_LENGTH = 64;
 	
 	/** Constructor for the lexical analyzer */
 	public Tokenizer(String file){
 		// Initializes and reserves words in the keyword table
 		keywordTable = new KeywordTable();
+		// Gets the singleton instance of the Classification object.
+		classification = Classification.getInstance();
 		// Initializes the charstream, and opens a file
 		charStream = new CharStream(file);
 		if(!charStream.isOpen()){
@@ -35,28 +42,28 @@ public class Tokenizer {
 		currentChar = '@';
 	}
 	
-	/** Get the current line number */
-	public int getLineNumber(){
+	/** Get the current line number. Used for error message printing */
+	private int getLineNumber(){
 		return charStream.lineNumber();
 	}
 	
 	/** Get the current index number */
-	public int getIndexNumber(){
+	private int getIndexNumber(){
 		return charStream.indexNumber();
 	}
 	
-	/** Get the current line */
-	public String getCurrentLine(){
+	/** Get the current line as a String. Used for error message printing */
+	private String getCurrentLine(){
 		return charStream.getCurrentLine();
 	}
 	
 	/** Pushes back character into input */
-	public void pushback(int ch){
+	private void pushback(int ch){
 		charStream.pushBack(ch);
 	}
 	
 	/** Pushes back two dots into input. Used when we see a doubledot directly after a constant*/
-	public void doublePushback(){
+	private void doublePushback(){
 		charStream.pushBack('.');
 		charStream.pushBack('.');
 	}
@@ -88,13 +95,15 @@ public class Tokenizer {
 	 *         an INTCONSTANT, or a REALCONSTANT.
 	 *         Returns false otherwise. 
 	 */
-	public boolean isBinaryOperator(){
+	private boolean isBinaryOperator(){
 		return previousToken != null && 
 				(previousToken.type == TokenType.RIGHTPAREN || previousToken.type == TokenType.RIGHTBRACKET 
 				|| previousToken.type == TokenType.IDENTIFIER || previousToken.type == TokenType.INTCONSTANT
 				|| previousToken.type == TokenType.REALCONSTANT);
 	}
-	
+
+// == Lexical Analysis Methods ===================================================================
+// ===============================================================================================
 	/** Gets the next significant character from the input file. 
 	 *  Throws a LexicalError if there is an illegal character or a 
 	 *  malformed comment */
@@ -114,8 +123,13 @@ public class Tokenizer {
 		buffer = new StringBuilder();
 		// Get a new char from the input
 		currentChar = getChar();
+		// We first check if the character is the EOF marker. It is the only one
+		// that will not be within the ASCII range (below 256). 
+		if(isEndOfInput(currentChar)){
+			return new Token(TokenType.ENDOFFILE);
+		}
 		// If we see a digit, return a constant token (either an INTCONSTANT or a REALCONSTANT)
-		if(isDigit(currentChar)){
+		else if(isDigit(currentChar)){
 			return getConstantToken();
 		}
 		// If we see a letter, return an identifier token
@@ -170,10 +184,6 @@ public class Tokenizer {
 				return new Token(TokenType.ENDMARKER);
 			}
 		}
-		// EOF
-		else if(isEndOfInput(currentChar)){
-			return new Token(TokenType.ENDOFFILE);
-		}
 		// If the current char is blank, read the next character (makes a recursive call)
 		else if(isBlank(currentChar)){
 			return assemble();
@@ -207,9 +217,12 @@ public class Tokenizer {
 	    // If an error is thrown, stop execution and print out the error message
 		} catch (LexicalError e){
 			System.err.println(e.getMessage());
+			return new Token(TokenType.ERROR);
 		}
-		return null;
 	}
+
+//== Token recognition subroutines ===========================================================
+//============================================================================================
 	
 	/** This subroutine is called when <code>assemble()</code> encounters a letter. 
 	 *  @return An identifier token 
@@ -526,55 +539,42 @@ public class Tokenizer {
 		System.out.println("Unexpected Input for currentChar: " + currentChar);
 		return new Token(TokenType.ERROR);
 	}
-	
-	
-	// Methods for character classification
-	public boolean isEndOfInput(char ch){
+// == Methods for character classification ====================================================
+// ============================================================================================
+	private boolean isEndOfInput(char ch){
 		return ch == (char)CharStream.EOF;
 	}
-	public boolean isLayout(char ch) {
-		return (!isEndOfInput(ch)  && (ch) <= ' ');
-		}
-//	public boolean isCommentStarter(char ch){
-//		return ch == '{';
-//	}
-//	public boolean isCommentStopper(char ch){
-//		return ch == '}';
-//	}
-	public boolean isUCLetter(char ch){
-		return ('A' <= (ch) && (ch) <= 'Z');
-	}
-	public boolean isLCLetter(char ch){
-		return ('a' <= (ch) && (ch) <= 'z');
-	}
-	public boolean isLetter(char ch){
-		return isUCLetter(ch) || isLCLetter(ch);
-	}
-	public boolean isDigit(char ch){
-		return ('0' <= (ch) && (ch) <= '9');
-	}
-	public boolean isLetterOrDigit(char ch){
-		return isLetter(ch) || isDigit(ch);
-	}
-	public boolean isPlusMinus(char ch){
-		return ch=='+' || ch=='-';
-	}
-	public boolean isMulop(char ch){
-		return ch=='*' || ch=='/';
-	}
-	public boolean isRelop(char ch){
-		return ch=='=' || ch=='<' || ch=='>';
-	}
-	public boolean isOperator(char ch){
-		return isPlusMinus(ch) || isMulop(ch) || isRelop(ch);
-	}
-	public boolean isSeparator(char ch){
-		return ch==';' || ch==',' || ch=='(' || ch==')';
-	}
-	public boolean isBlank(char ch){
+	private boolean isBlank(char ch){
 		return ch == CharStream.BLANK;
 	}
-	public boolean isDelim(char ch){
+	private boolean isLetter(char ch){
+		return classification.isLetter(ch);
+	}
+	private boolean isDigit(char ch){
+		return classification.isDigit(ch);
+	}
+	private boolean isLetterOrDigit(char ch){
+		return classification.isLetterOrDigit(ch);
+	}
+	private boolean isPlusMinus(char ch){
+		return classification.isPlusMinus(ch);
+	}
+	private boolean isMulop(char ch){
+		return classification.isMulop(ch);
+	}
+	private boolean isRelop(char ch){
+		return classification.isRelop(ch);
+	}
+	private boolean isOperator(char ch){
+		return classification.isOperator(ch);
+	}
+	private boolean isSeparator(char ch){
+		return ch==';' || ch==',' || ch=='(' || ch==')';
+	}
+	private boolean isLayout(char ch) {
+		return (!isEndOfInput(ch)  && (ch) <= ' ');
+	}
+	private boolean isDelim(char ch){
 		return isOperator(ch) || isSeparator(ch) || isBlank(ch);
 	}
 	

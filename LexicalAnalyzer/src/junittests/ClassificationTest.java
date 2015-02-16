@@ -4,9 +4,10 @@ import static org.junit.Assert.*;
 
 import org.junit.Test;
 
+/** JUnit tests for the Classification class */
 public class ClassificationTest {
 	
-	Classification classification = new Classification();
+	Classification classification = Classification.getInstance();
 
 	/** Tests for the isDigit method */
 	@Test
@@ -80,7 +81,7 @@ public class ClassificationTest {
 		}
 	}
 	
-	/** Tests for the isOperator method */
+	/** Tests for the operator methods */
 	@Test
 	public void isOperator(){
 		assertTrue(classification.isOperator('='));
@@ -94,6 +95,17 @@ public class ClassificationTest {
 		assertFalse(classification.isOperator('x'));
 		assertFalse(classification.isOperator((char)0));
 		assertFalse(classification.isOperator((char)255));
+		
+		assertTrue(classification.isPlusMinus('+'));
+		assertTrue(classification.isPlusMinus('-'));
+		
+		assertTrue(classification.isRelop('='));
+		assertTrue(classification.isRelop('<'));
+		assertTrue(classification.isRelop('>'));
+		
+		assertTrue(classification.isMulop('*'));
+		assertTrue(classification.isMulop('/'));
+		
 	}
 
 }

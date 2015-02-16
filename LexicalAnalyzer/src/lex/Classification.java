@@ -16,11 +16,12 @@ package lex;
  *
  */
 public class Classification {
-	
+	/** Instance of the class. Singleton design pattern */
+	private static Classification instance = null;
 	/** The size of each array. We assume the encoding is in ASCII, so we 
-	 * reserve byte arrays of size 256.
-	 */
-	private static final int SIZE = 256; 
+	 * reserve byte arrays of size 256. */
+	private static final int SIZE = 256;
+	
 	// Arrays: all initialized to false
 	/** Array to determine if a character is a digit */
 	public static boolean[] digits = new boolean[SIZE];
@@ -30,20 +31,39 @@ public class Classification {
 	public static boolean[] letterOrDigit = new boolean[SIZE];
 	/** Array to determine if character is any operator */
 	public static boolean[] operators = new boolean[SIZE];
+	/** Array to determine if character is a plus or a minus */
 	public static boolean[] plusMinus = new boolean[SIZE];
+	/** Array to determine if character is a plus or a minus */
+	public static boolean[] relop = new boolean[SIZE];
+	/** Array to determine if character is a plus or a minus */
+	public static boolean[] mulop = new boolean[SIZE];
 	
-	public Classification(){
+//== Constructor ======================================================================= //
+	
+	/** Public getInstance method. */
+	public static Classification getInstance(){
+		if(instance == null){
+			instance = new Classification();
+		}
+		return instance;
+	}
+	
+	/** Private Constructor. Initializes all of the arrays. */
+	private Classification(){
 		preCompute();
 	}
 	
-	
+	/** Initializes all of the arrays */
 	public void preCompute(){
 		initDigits();
 		initLetters();
 		initLetterOrDigit();
 		initOperators();
+		initPlusMinus();
+		initRelop();
+		initMulop();
 	}
-	
+//== Initialization ======================================================================= //
 	/** For all indices in the digit array that are actually digits ('0' to '9' or 48 to 57), 
 	 * set the value to 1
 	 */
@@ -86,7 +106,24 @@ public class Classification {
 		operators['<'] = true;
 		operators['>'] = true;
 	}
-	
+	/** Sets the appropriate values in the plusMinus array */
+	private void initPlusMinus(){
+		plusMinus['+'] = true;
+		plusMinus['-'] = true;
+	}
+	/** Sets the appropriate values in the relop array */
+	private void initRelop(){
+		relop['='] = true;
+		relop['<'] = true;
+		relop['>'] = true;
+	}
+	/** Sets the appropriate values in the mulop array */
+	private void initMulop(){
+		mulop['*'] = true;
+		mulop['/'] = true;
+	}
+
+//== Public methods ======================================================================= //
 	/**
 	 * Method to check if a character is a digit
 	 * @param ch Any ASCII character (int between 0 and 256)
@@ -116,15 +153,17 @@ public class Classification {
 	public boolean isOperator(char ch){
 		return operators[ch];
 	}
-	
+	/** Method to check if a character is a plus or a minus */
 	public boolean isPlusMinus(char ch){
-		return ch=='+' || ch=='-';
+		return plusMinus[ch];
 	}
-	public boolean isMulop(char ch){
-		return ch=='*' || ch=='/';
-	}
+	/** Method to check if a character is a relative operator */
 	public boolean isRelop(char ch){
-		return ch=='=' || ch=='<' || ch=='>';
+		return relop[ch];
+	}
+	/** Method to check if a character is a multiplicative operator */
+	public boolean isMulop(char ch){
+		return mulop[ch];
 	}
 	
 	

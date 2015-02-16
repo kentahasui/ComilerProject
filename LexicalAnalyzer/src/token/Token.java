@@ -20,11 +20,14 @@ public class Token {
 		return this.type;
 	}
 	
-	// Will be overriden by child classes
+	/** Gets the value of the token. Returns the token type for simple Tokens. */
 	public String getValue(){
-		return "";
+		return this.type.toString();
 	}
 	
+	/** Gets the String representation of an Operator token's type. Returns 
+	 * the empty string for non-operator tokens
+	 */
 	public String getOpType(){
 		return "";
 	}

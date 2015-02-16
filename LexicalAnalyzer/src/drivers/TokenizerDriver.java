@@ -12,9 +12,7 @@ public class TokenizerDriver
 	}
 
 	protected void run()   // change this function to call GetNextToken until all tokens are read
-	{
-//		LexicalAnalyzer tokenizer = 
-//			new LexicalAnalyzer("resources/lextest.dat");  
+	{ 
 		Tokenizer tokenizer = new Tokenizer("resources/lextest.dat");
 
 		Token token = new Token();
@@ -29,6 +27,11 @@ public class TokenizerDriver
 			else if ((token.getType() == TokenType.RELOP)
 					|| (token.getType() == TokenType.ADDOP) || (token.getType() == TokenType.MULOP))
 				System.out.print(" OpType : " + token.getOpType());
+			else if (token.getType() == TokenType.ERROR){
+				System.out.println();
+				System.err.println("Driver is exiting");
+				return;
+			}
 			System.out.println();
 
 			token = tokenizer.GetNextToken();
