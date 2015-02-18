@@ -128,6 +128,10 @@ public class Tokenizer {
 		if(isEndOfInput(currentChar)){
 			return new Token(TokenType.ENDOFFILE);
 		}
+		// If the current char is blank, read the next character (makes a recursive call)
+		else if(isBlank(currentChar)){
+			return assemble();
+		}
 		// If we see a digit, return a constant token (either an INTCONSTANT or a REALCONSTANT)
 		else if(isDigit(currentChar)){
 			return getConstantToken();
@@ -154,7 +158,7 @@ public class Tokenizer {
 			}
 		}
 		else if(currentChar == ','){
-			return new Token(TokenType.COLON);
+			return new Token(TokenType.COMMA);
 		}
 		else if(currentChar == ';'){
 			return new Token(TokenType.SEMICOLON);
@@ -183,10 +187,6 @@ public class Tokenizer {
 				pushback(currentChar);
 				return new Token(TokenType.ENDMARKER);
 			}
-		}
-		// If the current char is blank, read the next character (makes a recursive call)
-		else if(isBlank(currentChar)){
-			return assemble();
 		}
 		else{
 			throw LexicalError.IllegalCharacter(currentChar, getLineNumber(), getCurrentLine());
