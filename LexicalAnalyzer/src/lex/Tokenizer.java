@@ -21,8 +21,6 @@ public class Tokenizer {
 	private StringBuilder buffer;
 	/** Char to store current character */
 	private char currentChar;
-	/** State of the machine */
-	private int state; 
 	
 	/** Constructor for the lexical analyzer */
 	public Tokenizer(String file){
@@ -43,17 +41,17 @@ public class Tokenizer {
 	}
 	
 	/** Get the current line number. Used for error message printing */
-	private int getLineNumber(){
+	public int getLineNumber(){
 		return charStream.lineNumber();
 	}
 	
 	/** Get the current index number */
-	private int getIndexNumber(){
+	public int getIndexNumber(){
 		return charStream.indexNumber();
 	}
 	
 	/** Get the current line as a String. Used for error message printing */
-	private String getCurrentLine(){
+	public String getCurrentLine(){
 		return charStream.getCurrentLine();
 	}
 	
@@ -175,6 +173,7 @@ public class Tokenizer {
 		else if(currentChar == '['){
 			return new Token(TokenType.LEFTBRACKET);
 		}
+		// If we see a dot, we have to check if it is an endmarker or a double dot
 		else if(currentChar == '.'){
 			currentChar = getChar();
 			if(currentChar == '.'){
@@ -229,7 +228,7 @@ public class Tokenizer {
 	 *  @throws LexicalError IdentifierTooLong*/
 	private Token getIdentifierToken() throws LexicalError{
 		// Initialize the state, and append the previously seen letter to the buffer
-		state = 0;
+		int state = 0;
 		buffer.append(currentChar);
 		// Length of current identifier. If this number is greater than MAX_LENGTH, throw an error
 		int IDLength = 1;
@@ -387,7 +386,7 @@ public class Tokenizer {
 	 * @throws LexicalError
 	 */
 	private Token getConstantToken() throws LexicalError{
-		state = 1;
+		int state = 1;
 		buffer.append(currentChar);
 		// Loop infinitely, until either a token is found or an error is thrown
 		while(true){
@@ -395,7 +394,7 @@ public class Tokenizer {
 			case 1: {
 				currentChar = getChar();
 				// If the current char is a digit, add the digit to the buffer. 
-				// Append the digit to the buffer. 
+				// Append the digit to the buffer. Stay in state 1
 				if(isDigit(currentChar)){
 					buffer.append(currentChar);
 				}
@@ -404,7 +403,7 @@ public class Tokenizer {
 					buffer.append(currentChar);
 					state = 2;
 				}
-				// If the current char is an E, we have an exponential number
+				// If the current char is an E, we have a real number
 				else if(currentChar == 'e' || currentChar == 'E'){
 					buffer.append('E');
 					state = 6;
@@ -440,8 +439,7 @@ public class Tokenizer {
 				}
 				break;
 			}
-			// We have an INTCONSTANT. Check if the length is too long. 
-			// If a valid length, return a Constant token of type INTCONSTANT
+			// We have an INTCONSTANT
 			case 3: {
 				return new Constant(TokenType.INTCONSTANT, buffer.toString());
 			}
@@ -568,16 +566,4 @@ public class Tokenizer {
 	private boolean isOperator(char ch){
 		return classification.isOperator(ch);
 	}
-	private boolean isSeparator(char ch){
-		return ch==';' || ch==',' || ch=='(' || ch==')';
-	}
-	private boolean isLayout(char ch) {
-		return (!isEndOfInput(ch)  && (ch) <= ' ');
-	}
-	private boolean isDelim(char ch){
-		return isOperator(ch) || isSeparator(ch) || isBlank(ch);
-	}
-	
-	
-
 }

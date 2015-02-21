@@ -7,7 +7,9 @@ import org.junit.Test;
 /** JUnit tests for the Classification class */
 public class ClassificationTest {
 	
+	
 	Classification classification = Classification.getInstance();
+	int size = Classification.SIZE;
 
 	/** Tests for the isDigit method */
 	@Test
@@ -38,7 +40,7 @@ public class ClassificationTest {
 			assertFalse(classification.isDigit((char)l));
 		}
 		
-		for(int m = '9'+1; m<256; m++){
+		for(int m = '9'+1; m<size; m++){
 			assertFalse(classification.isDigit((char) m));
 		}
 		assertFalse(classification.isDigit('a'));
@@ -62,7 +64,7 @@ public class ClassificationTest {
 		for(int m = 'Z'+1; m<'a'; m++){
 			assertFalse(classification.isLetter((char)m));
 		}
-		for(int n = 'z'+1; n<256; n++){
+		for(int n = 'z'+1; n<size; n++){
 			assertFalse(classification.isLetter((char)n));
 		}
 	}
@@ -70,7 +72,7 @@ public class ClassificationTest {
 	/** Tests for the isLetterOrDigit method */
 	@Test
 	public void isLetterOrDigitTest(){
-		for(int i = 0; i<256; i++){
+		for(int i = 0; i<size; i++){
 			char ch = (char)i;
 			if(classification.isLetter(ch) || classification.isDigit(ch)){
 				assertTrue(classification.isLetterOrDigit(ch));
@@ -94,7 +96,7 @@ public class ClassificationTest {
 		assertFalse(classification.isOperator(' '));
 		assertFalse(classification.isOperator('x'));
 		assertFalse(classification.isOperator((char)0));
-		assertFalse(classification.isOperator((char)255));
+		assertFalse(classification.isOperator((char)127));
 		
 		assertTrue(classification.isPlusMinus('+'));
 		assertTrue(classification.isPlusMinus('-'));

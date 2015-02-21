@@ -13,8 +13,7 @@ public class TokenizerDriver
 
 	protected void run()   // change this function to call GetNextToken until all tokens are read
 	{ 
-		//Tokenizer tokenizer = new Tokenizer("resources/lextest.dat");
-		Tokenizer tokenizer = new Tokenizer("resources/pascal_files/func.pas");
+		Tokenizer tokenizer = new Tokenizer("resources/lextest.dat");
 
 		Token token = new Token();
 		token =	tokenizer.GetNextToken();

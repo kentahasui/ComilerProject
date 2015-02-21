@@ -2,9 +2,9 @@ package lex;
 
 /** 
  * A class used to classify characters. Assumes the encoding is in ASCII. 
- * Values are precomputed and placed into boolean arrays, which each take up 
- * 1 byte of memory. We assume that the values fed into the methods will be in 
- * ASCII, and thus have an integer representation of less than 256. Any other characters
+ * Values are precomputed and placed into boolean arrays. 
+ * We assume that the values fed into the methods will be in basic
+ * ASCII, and thus have an integer representation of less than 128. Any other characters
  * will be parsed out by the CharStream class.
  * An alternate representation would use the java.util.BitSet object to store values. This 
  * would save a lot of memory, but accessing the bits in the set would add overhead. Since
@@ -19,8 +19,8 @@ public class Classification {
 	/** Instance of the class. Singleton design pattern */
 	private static Classification instance = null;
 	/** The size of each array. We assume the encoding is in ASCII, so we 
-	 * reserve byte arrays of size 256. */
-	private static final int SIZE = 256;
+	 * reserve byte arrays of size 128. */
+	public static final int SIZE = 128;
 	
 	// Arrays: all initialized to false
 	/** Array to determine if a character is a digit */
