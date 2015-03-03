@@ -1,4 +1,5 @@
 package token;
+import grammarsymbols.*;
 
 public enum TokenType implements GrammarSymbol
 {
