@@ -1,4 +1,4 @@
-package token;
+package grammarsymbols;
 
 public interface GrammarSymbol {
 	
