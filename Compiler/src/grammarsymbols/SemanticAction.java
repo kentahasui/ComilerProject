@@ -1,5 +1,6 @@
 package grammarsymbols;
 
+/** Semantic actions for the compiler **/
 public enum SemanticAction implements GrammarSymbol
 {
       action1(1), action2(2), action3(3), action4(4), action5(5), action6(6),
