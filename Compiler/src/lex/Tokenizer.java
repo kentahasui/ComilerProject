@@ -1,5 +1,6 @@
 package lex;
 import errors.*;
+import grammarsymbols.TokenType;
 import token.*;
 
 /** The Lexical Analyzer Class */

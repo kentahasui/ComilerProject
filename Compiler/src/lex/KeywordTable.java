@@ -1,5 +1,8 @@
 package lex;
+import grammarsymbols.TokenType;
+
 import java.util.HashMap;
+
 import token.*;
 
 /** A table class, which represents the keywords in Pascal */ 

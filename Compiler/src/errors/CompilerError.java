@@ -9,7 +9,10 @@ public abstract class CompilerError extends Exception
     * as the compiler generates new errors.
     */
    public enum Type {ILLEGAL_CHARACTER, BAD_COMMENT, UNTERMINATED_COMMENT, UNMATCHED_COMMENT, IDENTIFIER_TOO_LONG, 
-	   CONSTANT_TOO_LONG, BAD_CONSTANT, ILLEGAL_FLOAT, ILLEGAL_EXPONENT_DECIMAL, ILLEGAL_EXPONENT, ILLEGAL_DECIMAL };
+	   CONSTANT_TOO_LONG, BAD_CONSTANT, ILLEGAL_FLOAT, ILLEGAL_EXPONENT_DECIMAL, ILLEGAL_EXPONENT, ILLEGAL_DECIMAL,
+	   
+	   UNMATCHED_TERMINALS, ERROR_PRODUCTION, UNKNOWN_SYMBOL_TYPE
+   };
 
    /** The type of error represented by this object.  This field is declared
     * as final and must be set in the constructor.

@@ -1,5 +1,7 @@
 package token;
 
+import grammarsymbols.TokenType;
+
 public class Identifier extends Token{
 	// Will eventually be a pointer to location in the symbol table
 	public String lexeme;

@@ -46,7 +46,7 @@ public class LexicalError extends CompilerError
    {
 	   return new LexicalError(Type.ILLEGAL_CHARACTER,
 			   errorStart(lineNumber, lineContent)
-			   + ": Illegal character: " + c);
+			   + " Illegal character: " + c);
    }
 
    public static LexicalError UnterminatedComment()
@@ -60,7 +60,7 @@ public class LexicalError extends CompilerError
    {
 	   return new LexicalError(Type.UNTERMINATED_COMMENT, 
 			   errorStart(lineNumber, lineContent) + 
-			   ": Unterminated comment.");
+			   " Unterminated comment.");
    }
    
    /** A lexical error we throw when comment brackets are unmatched 
@@ -69,7 +69,7 @@ public class LexicalError extends CompilerError
    public static LexicalError UnmatchedComment(int lineNumber, String lineContent){
 	   return new LexicalError(Type.UNMATCHED_COMMENT, 
 			   errorStart(lineNumber, lineContent) +  
-			   ": Unmatched comment bracket. Cannot have a } before a corresponding {");
+			   " Unmatched comment bracket. Cannot have a } before a corresponding {");
    }
    
    /** A lexical error thrown when an identifier is longer than 64 characters  */

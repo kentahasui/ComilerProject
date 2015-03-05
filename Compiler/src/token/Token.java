@@ -1,5 +1,7 @@
 package token;
 
+import grammarsymbols.TokenType;
+
 
 public class Token {
 	public TokenType type; 

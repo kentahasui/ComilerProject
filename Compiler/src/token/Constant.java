@@ -1,5 +1,7 @@
 package token;
 
+import grammarsymbols.TokenType;
+
 public class Constant extends Token{
 	/** String representation of the constant. Will eventually
 	 *   be a pointer to a symbol table entry. **/

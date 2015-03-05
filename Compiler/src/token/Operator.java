@@ -1,5 +1,7 @@
 package token;
 
+import grammarsymbols.TokenType;
+
 public class Operator extends Token{
 	/** The integer representation of an operator token's value. 
 	 *  Ranges: RELOP = 1 to 6. ADDOP = 1 to 3. MULOP = 1 to 5.

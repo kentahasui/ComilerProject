@@ -36,6 +36,7 @@ public class CharStream
    private BufferedReader reader = null;
    /** The current line being processed. */
    private String currentLine = null;
+   private String previousLine = null;
    /** The current character that has been read from the file. */
    private char currentChar = 0;
    /** Index of the current character in the current line. */
@@ -80,6 +81,7 @@ public class CharStream
          reader = new BufferedReader(new FileReader(filename));
          lineNumber = 1;
          currentLine = reader.readLine();
+         previousLine = currentLine;
          currentChar = getChar();
          skipWhiteSpace();
       }
@@ -111,7 +113,12 @@ public class CharStream
    }
 
    /** Returns the current line. */
-   public String getCurrentLine() { return currentLine; }
+   public String getCurrentLine() { 
+	   if(charIndex == 0){
+		   return previousLine; 
+	   }
+	   return currentLine;
+   }
 
    /** Closes the currently open file.  Has no effect if no file is open. */
    public void close()
@@ -175,9 +182,9 @@ public class CharStream
       if (ch != EOF && !valid(ch))
       {
     	 if(ch == R_CURLY){
-    		 throw LexicalError.UnmatchedComment(lineNumber, currentLine);
+    		 throw LexicalError.UnmatchedComment(lineNumber, getCurrentLine());
     	 }
-         throw LexicalError.IllegalCharacter(ch, lineNumber, currentLine);
+         throw LexicalError.IllegalCharacter(ch, lineNumber, getCurrentLine());
       }
       if (ch == EOF){
     	  return (char)EOF;
@@ -231,6 +238,7 @@ public class CharStream
 
          try
          {
+        	previousLine = currentLine;
             currentLine = reader.readLine();
          }
          catch (IOException ex)
