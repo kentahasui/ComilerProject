@@ -197,28 +197,22 @@ public class Tokenizer {
 	 *  Provides symbol table pointers for identifiers and constants. 
 	 * @return A token with the proper type associated with it
 	 */
-	public Token GetNextToken(){
+	public Token GetNextToken() throws LexicalError{
 		// Call the assemble function
-		try{
-			Token newToken = assemble();
-			// Must check if token is an identifier or a keyword
-			if(newToken.getType() == TokenType.IDENTIFIER){
-				// Get the lexeme value for the Token
-				String lexeme = newToken.getValue();
-				// If the string is indeed a keyword, 
-				// return the new Token
-				if(isKeyword(lexeme)){
-					newToken = getKeyword(lexeme); 
-				}
+		Token newToken = assemble();
+		// Must check if token is an identifier or a keyword
+		if(newToken.getType() == TokenType.IDENTIFIER){
+			// Get the lexeme value for the Token
+			String lexeme = newToken.getValue();
+			// If the string is indeed a keyword, 
+			// return the new Token
+			if(isKeyword(lexeme)){
+				newToken = getKeyword(lexeme); 
 			}
-			// Update the previous token. Used for distinguishing unary operators
-			previousToken = newToken;
-			return newToken;
-	    // If an error is thrown, stop execution and print out the error message
-		} catch (LexicalError e){
-			System.err.println(e.getMessage());
-			return new Token(TokenType.ERROR);
 		}
+		// Update the previous token. Used for distinguishing unary operators
+		previousToken = newToken;
+		return newToken;		
 	}
 
 //== Token recognition subroutines ===========================================================

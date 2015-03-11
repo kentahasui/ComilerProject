@@ -1,9 +1,4 @@
 package parser;
-
-
-import lex.*;
-import errors.*;
-import token.*;
 import grammarsymbols.*;
 
 public class RHSTable {

@@ -37,10 +37,10 @@ public class ParseError extends CompilerError{
 	 * Takes in an error message as a parameter. This message will be stored in 
 	 * the ParseTable class*/
 	public static ParseError ErrorProduction(int lineNumber, String lineContent, 
-			String message){
+			String message, GrammarSymbol s){
 		return new ParseError(Type.ERROR_PRODUCTION,
 				errorStart(lineNumber, lineContent) +
-				message);
+				message + "\n>>> Got a " + s.toString() + " instead");
 	}
 	
 	/** Parse error thrown when a grammar symbol is neither a terminal, nonterminal, nor a semantic action */
@@ -48,6 +48,13 @@ public class ParseError extends CompilerError{
 		return new ParseError(Type.UNKNOWN_SYMBOL_TYPE, 
 				errorStart(lineNumber, lineContent) + 
 				s.toString() + " is not a terminal, nonterminal, nor a semantic action");
+	}
+	
+	/** Parse error thrown when, in panic mode error recovery, the parser reaches the EOF symbol 
+	 * on the stack
+	 */
+	public static ParseError ParserQuit(){
+		return new ParseError(Type.PARSER_QUIT, "Parse quit early due to error");
 	}
 
 

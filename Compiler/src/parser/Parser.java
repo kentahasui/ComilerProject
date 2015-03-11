@@ -3,10 +3,8 @@ import lex.*;
 import token.*;
 import errors.*;
 import grammarsymbols.*;
-
 import java.util.ArrayDeque;
 import java.util.Iterator;
-import java.util.Stack;
 
 public class Parser {
 	
@@ -14,10 +12,13 @@ public class Parser {
 	private RHSTable rhsTable;					// Table for right hand side productions
 	private ParseTable parseTable;				// Parse Table
 	private Tokenizer lexer;					// Lexical Analyzer
-	private final boolean DUMPSTACK = true;
+	private Token currentToken;					// Current Token
+	private GrammarSymbol predicted;			// Next predicted grammar symbol
+	private final boolean DUMPSTACK = true;		// Flag to dump the stack upon error
 	
-	/** Constructor for the parser. 
-	 * Initializes the stack of grammar symbols, the RHSTable, and the ParseTable. 
+	/** Private Constructor for the parser. 
+	 * Initializes the stack of grammar symbols, the RHSTable, and the ParseTable.
+	 * Will be called by the public constructor. 
 	 */
 	private Parser(){
 		stack = new ArrayDeque<GrammarSymbol>();
@@ -36,11 +37,11 @@ public class Parser {
 	}
 	
 	/** Method to parse the file. Repeatedly retrieves tokens from the lexical analyzer.
-	 * @throws CompilerError
+	 * @throws CompilerError Throws an exception if the parser is not able to recover from a parse error, 
+	 * or if there is a lexical error in the input file. 
 	 */
 	public void parse() throws CompilerError{
-		Token currentToken = lexer.GetNextToken();	// Current Token
-		GrammarSymbol predicted;	// Next predicted grammar symbol
+		currentToken = lexer.GetNextToken();	// Get first token from input
 		// Clear stack at the start
 		stack.clear();
 		// Push the end marker and the start symbol on the stack
@@ -48,13 +49,6 @@ public class Parser {
 		stack.push(NonTerminal.Goal);
 		// Loop until the stack is empty:
 		while(!stack.isEmpty()){
-			/* If the token extracted from the input is an error token, 
-			 * a lexical error has occured. Quit parsing. */
-			if(currentToken.getType() == TokenType.ERROR){
-				System.err.println(">>> Lexical Error. Quitting parser");
-				if(DUMPSTACK) { dumpStack(); }
-				return;
-			}
 			// Pop the first element off of the stack
 			predicted = stack.pop();
 			// Check if there is a token (terminal) on the stack
@@ -64,10 +58,16 @@ public class Parser {
 					// If they match, we get the next token from the input
 					currentToken = lexer.GetNextToken();
 				}
-				// The terminals do not match: throw an exception
+				// The terminals do not match: print error message.  
+				// Start error recovery routine
 				else{
 					if(DUMPSTACK) { dumpStack(); }
-					throw ParseError.UnmatchedTerminals(lexer.getLineNumber(), lexer.getCurrentLine(), predicted, currentToken.getType());
+					try {
+						throw ParseError.UnmatchedTerminals(lexer.getLineNumber(), lexer.getCurrentLine(), predicted, currentToken.getType());
+					}catch(ParseError e){
+						System.out.println(e.getMessage());
+						unMatchedTerminalRecovery();
+					}
 				}
 			}
 			// Otherwise, if the predicted grammar symbol is a non-terminal
@@ -80,34 +80,39 @@ public class Parser {
 				if(index < 0){
 					continue;
 				}
+				// An error code is found: go into panic mode error recovery
 				else if(index >= parseTable.ERRORCODE){
 					if(DUMPSTACK) { dumpStack(); }
-					throw ParseError.ErrorProduction(lexer.getLineNumber(), lexer.getCurrentLine(), parseTable.getErrorMessage(index));
+					try{
+						throw ParseError.ErrorProduction(lexer.getLineNumber(), lexer.getCurrentLine(), 
+								parseTable.getErrorMessage(index), currentToken.getType());
+					}catch(ParseError e){
+						System.out.println(e.getMessage());
+						panicModeRecovery();
+					}
+					
 				}
-				// We have a valid production
+				// If the code is not negative or an error, we have a valid production
 				else{
-					// The productions to push onto the stack
+					// Retrieve productions to push onto the stack from the RHSTable
 					GrammarSymbol[] productions = rhsTable.getRule(index);
 					// Push onto the stack in reverse order, so they are popped off in the correct order
 					for(int i = productions.length-1; i>=0; i--){
-						// Push the grammar symbols onto the stack
 						stack.push(productions[i]);
 					}
 				}
-				
 			}
 			// Otherwise if the symbol popped off is a semantic action, we ignore it and keep popping symbols off
 			else if(predicted.isAction()){
 				continue;
 			}
 			// This portion of code shouldn't execute! The symbol is neither a terminal, nonterminal,
-			// or a semantic action. throw an error
+			// or a semantic action. throw an error.
 			else{
 				throw ParseError.UnknownSymbolType(lexer.getLineNumber(), lexer.getCurrentLine(), predicted);
 			}
 		} // End While Loop
 		
-		System.out.println("Parse Successful");
 	}
 	
 	/** Method to print out the contents of the stack. 
@@ -115,9 +120,51 @@ public class Parser {
 	 *  to the bottom of the stack, as if we were continually popping elements off of the stack
 	 */
 	public void dumpStack(){
+		System.out.println();
+		// Print the symbol we are currently looking at: "top" of the stack
+		System.out.println(predicted);
+		// Print the rest of the stack
 		Iterator<GrammarSymbol> iter = stack.iterator();
 		while(iter.hasNext()){
 			System.out.println(iter.next());
+		}
+	}
+	
+	/** The recovery method for when the current terminal and the terminal at 
+	 * the top of the stack do not match. We simply ignore the current terminal 
+	 * on the stack and continue with our parse
+	 */
+	private void unMatchedTerminalRecovery(){
+		System.out.println("Error recovery: A " + predicted.toString() + " terminal was inserted into the file");
+	}
+	
+	/** Panic mode recovery: Skips tokens until semicolon, end or EOF encountered. 
+	 * Then does the same for the stack. 
+	 * Minimizes cascading errors. 
+	 * @throws LexicalError */
+	private void panicModeRecovery() throws CompilerError{
+		// Skip over terminals from the input
+		while(currentToken.getType() != TokenType.ENDOFFILE && 
+				currentToken.getType() !=TokenType.SEMICOLON &&
+				currentToken.getType() != TokenType.END)
+		{
+			System.out.println("Skipping over " + currentToken.getType().toString());
+			currentToken = lexer.GetNextToken();
+		}
+		// Skip over grammar symbols on the stack
+		while(predicted != TokenType.ENDOFFILE && 
+				predicted != TokenType.SEMICOLON &&
+				predicted != TokenType.END)
+		{
+			predicted = stack.pop();
+		}
+		// Push the eof, semicolon, or end symbol back onto the stack
+		stack.push(predicted);
+		// If we couldn't recover fully, we quit execution. 
+		// This prevents cascading errors. 
+		if(predicted == TokenType.ENDOFFILE
+			|| (currentToken.getType() == TokenType.SEMICOLON && predicted == TokenType.END)){
+			throw ParseError.ParserQuit();
 		}
 	}
 
