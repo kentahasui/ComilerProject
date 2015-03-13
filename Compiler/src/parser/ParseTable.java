@@ -1,8 +1,7 @@
 package parser;
-
-import errors.CompilerError;
+import java.io.*;
+import java.util.Scanner;
 import grammarsymbols.*;
-import lex.*;
 
 
 /** Parse Table class for the parser. 
@@ -36,9 +35,9 @@ public class ParseTable {
 		errors = new String[SIZE];
 		// Fill the parse table
 		fillTable();
-		// Fills the error table
+		// Fill the error table
 		fillErrorTable();
-		// printTable();
+		//printTable();
 	}
 	
 	/** Returns a specific error message from the values in the error table */
@@ -55,48 +54,34 @@ public class ParseTable {
 	}
 	
 	/** Method to fill the parse table with the appropriate values. 
-	 * This method uses the CharStream class to extract characters 
-	 * from the parsetable-2const.dat file
+	 * This method uses a Scanner to fill the table using the 
+	 * resources/parsetable-2const.dat file
 	 */
 	private void fillTable(){
 		// Holds the current indices of the matrix
 		int row = 0;
 		int column = 0;
-		// A buffer that holds the values inside the matrix
-		StringBuilder currentValue = new StringBuilder();
-		// Opens the file
-		CharStream stream = new CharStream("resources/parsetable-2const.dat");
-		if(!stream.isOpen()){
-			System.err.println("An error occurred. The file is not open.");
-		}
-		// We now extract characters from the file one by one until we hit the end of file
-		try{
-			char c = stream.currentChar();
-			while(c != CharStream.EOF){
-				// If c is a digit or a '-', it is part of a number and we append to the buffer
-				// We also figure out the indices for the matrix
-				if(Classification.getInstance().isDigit(c) || c=='-'){
-					currentValue.append(c);
-					row = (stream.lineNumber() - 2) / 2;
-					column = (stream.indexNumber() - 4) / 4;
+		// Parse the file
+		try {
+			Scanner scanner = new Scanner(new File("resources/parsetable-2const.dat"));
+			while(scanner.hasNextInt()){
+				// Update indices
+				if(column >= SIZE){
+					column = 0;
+					row++;
 				}
-				// When we hit a blank space, we have found a number! 
-				// Convert the string to an int, and place the value into the matrix
-				else if(c == CharStream.BLANK){
-					int value = Integer.parseInt(currentValue.toString());
-					// If we have an error, change to a specific error code
-					if(value == ERRORCODE){
-						value = getErrorCode(column);
-					}
-					matrix[row][column] = value;
-					// System.out.printf("Row: %d , Column: %d, Value: %d \n", row, column, value );
-					// Reset the buffer
-					currentValue = new StringBuilder();
+				int code = scanner.nextInt();
+				// Add appropriate error codes
+				if(code == ERRORCODE){
+					code = getErrorCode(column);
 				}
-				// Get the next character
-				c = stream.currentChar();
+				matrix[row][column] = code;
+				column++;
 			}
-		}catch(CompilerError e){
+			scanner.close();
+		} catch (FileNotFoundException e1) {
+			System.out.println("The file is not found, and cannot be opened");
+			e1.printStackTrace();
 		}
 	}
 	

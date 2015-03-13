@@ -26,13 +26,12 @@ public class ParseDriver {
 			return;
 		}
 		System.out.println("Compilation successful");
-
 	}
 	
 	public static void main(String[] args){
 		ParseDriver pd;
 		// If no arguments are given, use default constructor.
-	    // Opens the parsetest.dat file using a hard-coded path to the local directory
+	    // Opens the parsetest.dat file using a hard-coded path to the local "resources" directory
 		if(args.length == 0){
 			pd = new ParseDriver();
 		}
@@ -40,7 +39,7 @@ public class ParseDriver {
 		else{
 			pd = new ParseDriver(args[0]);
 		}
+		// Parse the file
 		pd.run();
 	}
-
 }

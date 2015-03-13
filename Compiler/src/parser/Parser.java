@@ -134,21 +134,28 @@ public class Parser {
 	 * the top of the stack do not match. We simply ignore the current terminal 
 	 * on the stack and continue with our parse
 	 */
-	private void unMatchedTerminalRecovery(){
+	private void unMatchedTerminalRecovery() throws ParseError{
+		// Prevents cascading errors and false "compilation succcessful" messages.
+		// Furthermore, since ENDMARKER should only be encountered at the end of the file, 
+		// we should not have to parse any more to catch extra errors. 
+		if(predicted == TokenType.ENDMARKER){
+			throw ParseError.ParserQuit();
+		}
 		System.out.println("Error recovery: A " + predicted.toString() + " terminal was inserted into the file");
 	}
 	
 	/** Panic mode recovery: Skips tokens until semicolon, end or EOF encountered. 
-	 * Then does the same for the stack. 
+	 * Then does the same for the stack of grammar symbols. 
 	 * Minimizes cascading errors. 
 	 * @throws LexicalError */
 	private void panicModeRecovery() throws CompilerError{
+		System.out.println("Error recovery: Panic mode");
 		// Skip over terminals from the input
 		while(currentToken.getType() != TokenType.ENDOFFILE && 
 				currentToken.getType() !=TokenType.SEMICOLON &&
 				currentToken.getType() != TokenType.END)
 		{
-			System.out.println("Skipping over " + currentToken.getType().toString());
+			//System.out.println("Skipping over " + currentToken.getType().toString());
 			currentToken = lexer.GetNextToken();
 		}
 		// Skip over grammar symbols on the stack
