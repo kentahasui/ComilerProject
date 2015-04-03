@@ -1,15 +1,18 @@
 package lex;
 import errors.*;
 import grammarsymbols.TokenType;
+import symboltable.KeywordEntry;
+import symboltable.SymbolTable;
 import token.*;
 
 /** The Lexical Analyzer Class */
 public class Tokenizer {
 	/** Maximum length of an identifier. */
 	private static final int MAX_LENGTH = 64;
+	private static final int TABLE_SIZE = 37;
 	
 	/** A table for identifying reserved words */
-	private KeywordTable keywordTable;
+	private SymbolTable keywordTable;
 	/** An object to identify characters */
 	private Classification classification;
 	
@@ -26,7 +29,8 @@ public class Tokenizer {
 	/** Constructor for the lexical analyzer */
 	public Tokenizer(String file){
 		// Initializes and reserves words in the keyword table
-		keywordTable = new KeywordTable();
+		keywordTable = new SymbolTable(TABLE_SIZE);
+		initializeTable();
 		// Gets the singleton instance of the Classification object.
 		classification = Classification.getInstance();
 		// Initializes the charstream, and opens a file
@@ -75,7 +79,7 @@ public class Tokenizer {
 	 *         false otherwise
 	 */
 	public boolean isKeyword(String lexeme){
-		return keywordTable.isKeyword(lexeme);
+		return (keywordTable.lookup(lexeme) != null);
 	}
 	
 	/** Returns the keyword token stored in the keyword table <br>
@@ -85,7 +89,8 @@ public class Tokenizer {
 	 * @return The corresponding keyword token (a Token with TokenType == KEYWORD)
 	 */
 	public Token getKeyword(String lexeme){
-		return keywordTable.table.get(lexeme);
+		KeywordEntry ke = (KeywordEntry)keywordTable.lookup(lexeme);
+		return ke.getToken();
 	}
 	
 	/** Upon seeing a '+' or '-', call this function to see if the operator is 
@@ -560,5 +565,31 @@ public class Tokenizer {
 	}
 	private boolean isOperator(char ch){
 		return classification.isOperator(ch);
+	}
+	
+	/** Method to reserve the keywords in the program */
+	public void initializeTable(){
+		keywordTable.insert(new KeywordEntry("PROGRAM", new Token(TokenType.PROGRAM)));
+		keywordTable.insert(new KeywordEntry("BEGIN", new Token(TokenType.BEGIN)));
+		keywordTable.insert(new KeywordEntry("END", new Token(TokenType.END)));
+		keywordTable.insert(new KeywordEntry("VAR", new Token(TokenType.VAR)));
+		keywordTable.insert(new KeywordEntry("FUNCTION", new Token(TokenType.FUNCTION)));
+		keywordTable.insert(new KeywordEntry("PROCEDURE", new Token(TokenType.PROCEDURE)));
+		keywordTable.insert(new KeywordEntry("RESULT", new Token(TokenType.RESULT)));
+		keywordTable.insert(new KeywordEntry("INTEGER", new Token(TokenType.INTEGER)));
+		keywordTable.insert(new KeywordEntry("REAL", new Token(TokenType.REAL)));
+		keywordTable.insert(new KeywordEntry("ARRAY", new Token(TokenType.ARRAY)));
+		keywordTable.insert(new KeywordEntry("OF", new Token(TokenType.OF)));
+		keywordTable.insert(new KeywordEntry("IF", new Token(TokenType.IF)));
+		keywordTable.insert(new KeywordEntry("THEN", new Token(TokenType.THEN)));
+		keywordTable.insert(new KeywordEntry("ELSE", new Token(TokenType.ELSE)));
+		keywordTable.insert(new KeywordEntry("DO", new Token(TokenType.DO)));
+		keywordTable.insert(new KeywordEntry("WHILE", new Token(TokenType.WHILE)));
+		keywordTable.insert(new KeywordEntry("NOT", new Token(TokenType.NOT)));
+		// Reserve the operator keywords
+		keywordTable.insert(new KeywordEntry("OR", new Operator(TokenType.ADDOP, "OR")));
+		keywordTable.insert(new KeywordEntry("DIV", new Operator(TokenType.MULOP, "DIV")));
+		keywordTable.insert(new KeywordEntry("MOD", new Operator(TokenType.MULOP, "MOD")));
+		keywordTable.insert(new KeywordEntry("AND", new Operator(TokenType.MULOP, "AND")));
 	}
 }

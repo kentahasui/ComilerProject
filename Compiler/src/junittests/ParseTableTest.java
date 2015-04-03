@@ -2,9 +2,7 @@ package junittests;
 import static org.junit.Assert.*;
 import grammarsymbols.NonTerminal;
 import grammarsymbols.TokenType;
-
 import org.junit.Test;
-
 import parser.*;
 
 public class ParseTableTest {

@@ -3,7 +3,7 @@ package token;
 import grammarsymbols.TokenType;
 
 
-public class Token {
+public class Token{
 	public TokenType type; 
 	
 	public Token(TokenType type){
@@ -32,6 +32,25 @@ public class Token {
 	 */
 	public String getOpType(){
 		return "";
+	}
+	
+	@Override
+	public boolean equals(Object other){
+		if(other == null) return false;
+		if(other instanceof Token){
+			Token otherToken = (Token)other;
+			if(this.getType() == otherToken.getType()){
+				if(this.getValue().equals(((Token) other).getValue())){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode(){
+		return this.getValue().hashCode();
 	}
 
 }

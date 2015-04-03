@@ -14,7 +14,7 @@ public class Parser {
 	private Tokenizer lexer;					// Lexical Analyzer
 	private Token currentToken;					// Current Token
 	private GrammarSymbol predicted;			// Next predicted grammar symbol
-	private final boolean DUMPSTACK = true;		// Flag to dump the stack upon error
+	private final boolean DUMPSTACK = false;		// Flag to dump the stack upon error
 	
 	/** Private Constructor for the parser. 
 	 * Initializes the stack of grammar symbols, the RHSTable, and the ParseTable.
