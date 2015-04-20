@@ -1,7 +1,7 @@
 package symboltable;
 import token.*;
 
-/** Class to insert keywords into the keyword table */
+/** Class used to insert keywords into the keyword table during the lexical analysis phase*/
 public class KeywordEntry extends SymbolTableEntry{
 	Token token;
 	

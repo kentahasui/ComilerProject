@@ -65,5 +65,6 @@ public class Operator extends Token{
 	public String getOpType(){
 		return valueString;
 	}
+	
 
 }

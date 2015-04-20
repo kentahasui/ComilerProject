@@ -13,6 +13,11 @@ public class ProcedureEntry extends SymbolTableEntry{
 		parameterInfo = new LinkedList<TokenType>();
 	}
 	
+	public ProcedureEntry(String name, int numberOfParameters){
+		this(name);
+		this.numberOfParameters = numberOfParameters;
+	}
+	
 	public ProcedureEntry(String name, int numberOfParameters, List<TokenType> paramInfo){
 		this(name);
 		this.numberOfParameters = numberOfParameters;

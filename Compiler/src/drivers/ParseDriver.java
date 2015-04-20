@@ -3,7 +3,7 @@ import parser.*;
 import errors.*;
 
 public class ParseDriver {
-	Parser parser;
+	public Parser parser;
 	
 	// Default constructor: opens the "resources/parsetest.dat" file. 
 	// Hard-coded path to a file in a local directory
@@ -17,7 +17,7 @@ public class ParseDriver {
 	}
 
 	
-	protected void run() 
+	public void run() 
 	{ 
 		try{
 			parser.parse();

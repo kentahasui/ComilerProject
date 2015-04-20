@@ -1,8 +1,10 @@
 package parser;
 import lex.*;
+import semanticActions.SemanticActions;
 import token.*;
 import errors.*;
 import grammarsymbols.*;
+
 import java.util.ArrayDeque;
 import java.util.Iterator;
 
@@ -13,8 +15,10 @@ public class Parser {
 	private ParseTable parseTable;				// Parse Table
 	private Tokenizer lexer;					// Lexical Analyzer
 	private Token currentToken;					// Current Token
+	private Token prevToken;
 	private GrammarSymbol predicted;			// Next predicted grammar symbol
 	private final boolean DUMPSTACK = false;		// Flag to dump the stack upon error
+	private SemanticActions semanticActions;
 	
 	/** Private Constructor for the parser. 
 	 * Initializes the stack of grammar symbols, the RHSTable, and the ParseTable.
@@ -24,6 +28,7 @@ public class Parser {
 		stack = new ArrayDeque<GrammarSymbol>();
 		rhsTable = new RHSTable();
 		parseTable = new ParseTable();
+		semanticActions = new SemanticActions();
 	}
 	
 	/** Constructor for the parser. 
@@ -42,6 +47,7 @@ public class Parser {
 	 */
 	public void parse() throws CompilerError{
 		currentToken = lexer.GetNextToken();	// Get first token from input
+		prevToken = currentToken;				// Initialize to prevent null pointer exception
 		// Clear stack at the start
 		stack.clear();
 		// Push the end marker and the start symbol on the stack
@@ -55,7 +61,9 @@ public class Parser {
 			if(predicted.isToken()){
 				// Try to match the current token with the non-terminal: 
 				if(predicted == currentToken.getType()){
+//					System.out.println(currentToken);
 					// If they match, we get the next token from the input
+					prevToken = currentToken;
 					currentToken = lexer.GetNextToken();
 				}
 				// The terminals do not match: print error message.  
@@ -104,6 +112,8 @@ public class Parser {
 			}
 			// Otherwise if the symbol popped off is a semantic action, we ignore it and keep popping symbols off
 			else if(predicted.isAction()){
+//				System.out.println(predicted + ": " + prevToken);
+				semanticActions.Execute((SemanticAction)predicted, prevToken);
 				continue;
 			}
 			// This portion of code shouldn't execute! The symbol is neither a terminal, nonterminal,
@@ -112,7 +122,9 @@ public class Parser {
 				throw ParseError.UnknownSymbolType(lexer.getLineNumber(), lexer.getCurrentLine(), predicted);
 			}
 		} // End While Loop
-		
+		System.out.println();
+		semanticActions.dumpGlobalTable();
+		semanticActions.dumpConstantTable();
 	}
 	
 	/** Method to print out the contents of the stack. 

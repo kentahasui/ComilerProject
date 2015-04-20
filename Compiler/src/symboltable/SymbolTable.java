@@ -2,8 +2,6 @@ package symboltable;
 import java.util.*;
 import java.util.Map.Entry;
 
-import token.*;
-
 public class SymbolTable {
 	// Table of entries: each name maps to an entry
 	private Map<String, SymbolTableEntry> table;
@@ -20,6 +18,10 @@ public class SymbolTable {
 	public SymbolTableEntry lookup(String name){
 		if(table.containsKey(name)) return table.get(name);
 		else return null;
+	}
+	
+	public boolean contains(String name){
+		return table.containsKey(name);
 	}
 	
 	/** Inserts a Token-SymbolTableEntry (key-value) pair into the table.

@@ -24,6 +24,5 @@ public class Constant extends Token{
 	public String getValue(){
 		return lexeme;
 	}
-	
 
 }

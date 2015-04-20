@@ -35,6 +35,11 @@ public class Token{
 	}
 	
 	@Override
+	public String toString(){
+		return this.getValue();
+	}
+	
+	@Override
 	public boolean equals(Object other){
 		if(other == null) return false;
 		if(other instanceof Token){
