@@ -61,6 +61,7 @@ public class ParseTableTest {
 		}
 	}
 	
+	@Test
 	/** Tests for the error table */
 	public void errorTableTest(){
 		// Tests that all entries in the error table are filled

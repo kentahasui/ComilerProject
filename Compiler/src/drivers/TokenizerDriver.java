@@ -29,7 +29,7 @@ public class TokenizerDriver
 					System.out.print(" Value : " + token.getValue());
 				else if ((token.getType() == TokenType.RELOP)
 						|| (token.getType() == TokenType.ADDOP) || (token.getType() == TokenType.MULOP))
-					System.out.print(" OpType : " + token.getOpType());
+					System.out.print(" OpType : " + token.getValue());
 				else if (token.getType() == TokenType.ERROR){
 					System.out.println();
 					System.err.println("Driver is exiting");

@@ -1,7 +1,8 @@
-/symboltable/
+/drivers/
 /semanticActions/
+/symboltable/
 /errors/
 /parser/
-/token/
+/.DS_Store
 /junittests/
-/drivers/
+/token/

@@ -8,6 +8,7 @@ public class SymbolTableEntry {
 	private String name;
 	// Type of the entry
 	private TokenType type;
+	private boolean isNull = false;		// For null offsets
 	
 	/* Constructors */
 	public SymbolTableEntry(){
@@ -28,6 +29,9 @@ public class SymbolTableEntry {
 	}
 	public TokenType getType(){
 		return type;
+	}
+	public int getAddress(){
+		return Integer.MAX_VALUE;	// Dummy value
 	}
 	
 	/* Setters */
@@ -61,6 +65,14 @@ public class SymbolTableEntry {
 	
 	public boolean isKeyword(){
 		return false;
+	}
+	
+	public boolean isNull(){
+		return isNull;
+	}
+	
+	public void makeNull(){
+		isNull = true;
 	}
 	
 	public void print(){

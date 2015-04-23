@@ -3,11 +3,10 @@ package token;
 import grammarsymbols.TokenType;
 
 public class Operator extends Token{
-	/** The integer representation of an operator token's value. 
-	 *  Ranges: RELOP = 1 to 6. ADDOP = 1 to 3. MULOP = 1 to 5.
-	 */
-	private int value;
+	/** String representation of a pascal operator */
 	private String valueString;
+	/** String representation of a TVI operator */
+	private String tviCode;
 	
 	/** Constructor for an operator token. 
 	 * 
@@ -17,52 +16,43 @@ public class Operator extends Token{
 	public Operator(TokenType type, String valueString){
 		super(type);
 		this.valueString = valueString;
-		this.value = stringToIntValue(valueString);
+		this.tviCode = toTVICode(valueString);
 	}
 	
-	/** Converts the String representation of the operator 
-	 *  to its int equivalent
-	 * @param s The string value to convert
-	 * @return The int value equivalent
+	/** Converts a pascal operator to a tvi operator. 
+	 * AND, OR, DIV, and MOD return the string "error", since they do not have valid 
+	 * tvi opcode equivalents
 	 */
-	public int stringToIntValue(String s){
+	private String toTVICode(String s){
 		if(type == TokenType.RELOP){
-			if("=".equals(s)) return 1;
-			if("<>".equals(s)) return 2;
-			if("<".equals(s)) return 3;
-			if(">".equals(s)) return 4;
-			if("<=".equals(s)) return 5;
-			if(">=".equals(s)) return 6;
+			if("=".equals(s)) return "beq";
+			else if("<>".equals(s)) return "bne";
+			else if("<".equals(s)) return "blt";
+			else if(">".equals(s)) return "bgt";
+			else if("<=".equals(s)) return "ble";
+			else if(">=".equals(s)) return "bge";
+			else return "error";
 		}
 		else if(type == TokenType.ADDOP){
-			if("+".equals(s)) return 1;
-			if("-".equals(s)) return 2;
-			if("OR".equals(s)) return 3;
+			if("+".equals(s)) return "add";
+			else if("-".equals(s)) return "sub";
+			else return "error";
 		}
 		else if(type == TokenType.MULOP){
-			if("*".equals(s)) return 1;
-			if("/".equals(s)) return 2;
-			if("DIV".equals(s)) return 3;
-			if("MOD".equals(s)) return 4;
-			if("AND".equals(s)) return 5;
+			if("*".equals(s)) return "mul";
+			if("/".equals(s)) return "div";
+			else return "error";
 		}
-		return 0;
+		else return "error";
+	}
+	
+	/** Returns the tvi code for an operator 
+	 * Valid tvi codes include beq, bne, blt, bgt, ble, bge, add, sub, mul, and div*/
+	public String getTVICode(){
+		return tviCode;
 	}
 	
 	public String getValue(){
-		return String.valueOf(value);
-	}
-	
-	public int getIntValue(){
-		return value;
-	}
-	
-	/** Returns a string representation of this Operator Token's value field
-	 *  Returns an error string if the integer is not a valid value
-	 * 
-	 * @return A String
-	 */
-	public String getOpType(){
 		return valueString;
 	}
 	

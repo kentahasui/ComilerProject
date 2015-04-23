@@ -21,7 +21,7 @@ public class ConstantEntry extends SymbolTableEntry{
 	}
 	
 	public void setValue(){
-		if(this.getType() == TokenType.INTCONSTANT){
+		if(this.getType() == TokenType.INTEGER){
 			intValue = Integer.parseInt(this.getName());
 		}
 	}

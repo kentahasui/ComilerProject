@@ -2,6 +2,9 @@ package drivers;
 import parser.*;
 import errors.*;
 
+import java.io.*;
+
+
 public class ParseDriver {
 	public Parser parser;
 	
@@ -25,7 +28,7 @@ public class ParseDriver {
 			System.out.println(e.getMessage());
 			return;
 		}
-		System.out.println("Compilation successful");
+//		System.out.println("Compilation successful");
 	}
 	
 	public static void main(String[] args){
@@ -39,7 +42,14 @@ public class ParseDriver {
 		else{
 			pd = new ParseDriver(args[0]);
 		}
+		// Print to out.tvi file
+//		try {
+//			System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream("out.tvi")), true));
+//		} catch (FileNotFoundException e) {
+//			e.printStackTrace();
+//		}
 		// Parse the file
 		pd.run();
+		System.out.flush();
 	}
 }

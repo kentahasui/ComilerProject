@@ -4,7 +4,7 @@ import grammarsymbols.TokenType;
 
 public class Identifier extends Token{
 	// Will eventually be a pointer to location in the symbol table
-	public String lexeme;
+	private String lexeme;
 	
 	/** Constructor for an Identifier Token. 
 	 *  Initializes the token type

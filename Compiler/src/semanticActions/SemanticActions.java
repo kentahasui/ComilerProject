@@ -3,11 +3,14 @@ import errors.*;
 
 import java.util.*;
 
+import javax.swing.event.ListSelectionEvent;
+
 import lex.*;
 import parser.*;
 import symboltable.*;
 import token.Constant;
 import token.Identifier;
+import token.Operator;
 import token.Token;
 import drivers.*;
 import grammarsymbols.*;
@@ -17,23 +20,39 @@ public class SemanticActions {
 	private final int TABLE_SIZE = 37;
 	// Stack for semantic actions
 	private ArrayDeque<Object> semanticStack ;	// Stack of semantic objects
-//	Quadruples not used until Phase 2
-//	private Quadruples quads ;
+	private Quadruples quads;		// Collection of quadruple entries
+	
+	// Flags for variable declarations
 	private boolean insert ;		// Insert or Search mode
 	private boolean isArray ; 		// Array Variable or Simple Variable
 	private boolean global ;		// Global Environment or Local Environment
 	private boolean isParm;			// Is a parameter?
+	
+	// Memory allocation
 	private int globalMemory ;		// Offset from global memory
 	private int localMemory ;		// Offset from local memory
+	private int globalAlloc; 		// Quadruple array location of ALLOC statement for global memory
+	private int localAlloc; 		// Quadruple array location of ALLOC statement for local memory
 	
+	// Symbol Tables
 	private SymbolTable globalTable;	// Keyword Table for global variables
 	private SymbolTable localTable;
 	private SymbolTable constantTable;	// Keyword Table for constants
 	
+	// Current Function
+	private SymbolTableEntry currentFunction;	// Symbol table entry for function being parsed
+	
+	// Counter and prefixes for temporary variables
+	private int tempCounter;		// Counter to give unique names to a temporary variable
+	private static final String tempPrefix = "$$"; 	// Prefix for temporary variables
+	
+	// For error messages
+	private Parser parser;
+	private Tokenizer lexer;
 
 	public SemanticActions() {
 		semanticStack = new ArrayDeque<Object>();
-//		quads = new Quadruples();
+		quads = new Quadruples();
 		insert = true;		// Insert mode for symbol table
 		isArray = false;	// Simple variable
 		isParm = false;
@@ -43,6 +62,14 @@ public class SemanticActions {
 		globalTable = new SymbolTable(TABLE_SIZE);
 		constantTable = new SymbolTable(TABLE_SIZE);
 		InstallBuiltins(globalTable);
+		tempCounter = 0;
+		currentFunction = null;
+	}
+	
+	public SemanticActions(Parser parser){
+		this();
+		this.parser = parser;
+		this.lexer = parser.getLexer();
 	}
 
 	/** Method to install built-in (reserved) procedure names main, read, and write */
@@ -54,11 +81,211 @@ public class SemanticActions {
 		table.insert(new ProcedureEntry("WRITE"));
 	}
 	
+	/** Creates a new memory location */
+	public VariableEntry create(String name, TokenType type){
+		String newName = tempPrefix + name + tempCounter;
+		// Increment counter so same name is not used two times
+		tempCounter++;
+		VariableEntry entry = new VariableEntry(newName, type);
+		// Set the entry's address to be NEGATIVE value, so we know it is a temporary address
+		// Insert into appropriate table
+		if(global){
+			entry.setAddress(0 - globalMemory);
+			globalMemory++;
+			globalTable.insert(entry);
+		}
+		else{
+			entry.setAddress(0 - localMemory);
+			localMemory++;
+			localTable.insert(entry);
+		}
+		return entry;
+	}
+	
+/*///////////////////// GENERATE FUNCTIONS ///////////////////////////////////// */
+	public void generate(String tviCode){
+		String[] quadruple = {tviCode};
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, String operand2){
+		String[] quadruple = {tviCode, operand2};
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, SymbolTableEntry operand1){
+		String[] quadruple = new String[2];
+		quadruple[0] = tviCode;
+		quadruple[1] = getStringAddress(operand1);
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, String operand1, String operand2){
+		String[] quadruple = new String[3];
+		quadruple[0] = tviCode;
+		quadruple[1] = operand1;
+		quadruple[2] = operand2;
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, String operand1, SymbolTableEntry operand2){
+		String[] quadruple = new String[3];
+		quadruple[0] = tviCode;
+		quadruple[1] = operand1;
+		quadruple[2] = getStringAddress(operand2);
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, SymbolTableEntry operand1, String operand2){
+		String[] quadruple = new String[3];
+		quadruple[0] = tviCode;
+		quadruple[1] = getStringAddress(operand1);
+		quadruple[2] = operand2;
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, SymbolTableEntry operand1, SymbolTableEntry operand2){
+		String[] quadruple = new String[3];
+		quadruple[0] = tviCode;
+		quadruple[1] = getStringAddress(operand1);
+		quadruple[2] = getStringAddress(operand2);
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, SymbolTableEntry operand1, 
+			SymbolTableEntry operand2, SymbolTableEntry operand3){
+		String[] quadruple = new String[4];
+		quadruple[0] = tviCode;
+		quadruple[1] = getStringAddress(operand1);
+		quadruple[2] = getStringAddress(operand2);
+		quadruple[3] = getStringAddress(operand3);
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, SymbolTableEntry operand1, 
+			SymbolTableEntry operand2, String operand3){
+		String[] quadruple = new String[4];
+		quadruple[0] = tviCode;
+		quadruple[1] = getStringAddress(operand1);
+		quadruple[2] = getStringAddress(operand2);
+		quadruple[3] = operand3;
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, SymbolTableEntry operand1, 
+			String operand2, String operand3){
+		String[] quadruple = new String[4];
+		quadruple[0] = tviCode;
+		quadruple[1] = getStringAddress(operand1);
+		quadruple[2] = operand2;
+		quadruple[3] = operand3;
+		quads.addQuad(quadruple);
+	}
+	public void generate(String tviCode, SymbolTableEntry operand1, 
+			String operand2, SymbolTableEntry operand3){
+		String[] quadruple = new String[4];
+		quadruple[0] = tviCode;
+		quadruple[1] = getStringAddress(operand1);
+		quadruple[2] = operand2;
+		quadruple[3] = getStringAddress(operand3);
+		quads.addQuad(quadruple);
+	}
+	
+	/** Method to get string representation of a symbol table entry's address */
+	public String getStringAddress(SymbolTableEntry operand){
+		// If the operand is a constant, place into actual memory location
+		// Return the newly generated temporary variable's address
+		if(operand.isConstant()){
+			// Create new temporary variable
+			VariableEntry entry = create("t", operand.getType());
+			// Move the constant value into temporary variable
+			generate("move", operand.getName(), entry);
+			return getStringAddress(entry);
+		}
+		if(operand.isProcedure() || operand.isFunction()){
+			return operand.getName().toLowerCase();
+		}
+		// Convert operand's value to string
+		String stringValue = String.valueOf(Math.abs(operand.getAddress()));
+		if(global){ // If global variable
+			stringValue = "_" + stringValue;
+		}
+		else{ // If local variable
+			stringValue = "%" + stringValue;
+		}
+		return stringValue;
+	}
+/*///////////////////// END GENERATE FUNCTIONS ///////////////////////////////////// */
+	
+	/** Checks the types of 2 ids 
+	 * @param id1 A Symbol Table Entry
+	 * @param id2 A Symbol Table Entry
+	 * @return 0 if id1 and id2 are both integers <br>
+	 * 1 if id1 and id2 are both reals <br>
+	 * 2 if id1 is real and id2 is integer <br>
+	 * 3 if id1 is integer and id2 is real <br>
+	 * 4 if unexpected types*/
+	public int typeCheck(SymbolTableEntry id1, SymbolTableEntry id2){
+		// If both are same type
+		if(id1.getType() == id2.getType()){
+			// Both integers
+			if(id1.getType() == TokenType.INTEGER){
+				return 0;
+			}
+			// Both reals
+			if(id2.getType() == TokenType.REAL){
+				return 1;
+			}
+			// Error: unexpected types
+			return 4;
+		}
+		// Different types
+		else{
+			if(id1.getType() == TokenType.REAL &&
+					id2.getType() == TokenType.INTEGER){
+				return 2;
+			}
+			if(id1.getType() == TokenType.INTEGER &&
+					id2.getType() == TokenType.REAL){
+				return 3;
+			}
+			// Error: unexpected types
+			return 4;
+		}
+	}
+	
+	/** Creates and returns a list of integers, which are indices into the array of quadruples. 
+	 * @param i An index that is inserted into the list
+	 * @return A list of Integers
+	 */
+	public List<Integer> makeList(int i){
+		ArrayList<Integer> list = new ArrayList<Integer>();
+		list.add(i);
+		return list;
+	}
+	
+	/** Concatenates the lists p1 and p2, and returns the new list. 
+	 *  This method copies all elements of both lists into the new list
+	 *  @param list1 A list of Integers
+	 *  @param list2 A list of Integers
+	 *  @return A new List of Integers*/
+	public List<Integer> merge(List<Integer> list1, List<Integer>list2){
+		// Creates new list, with initial capacity set to avoid constantly resizing
+		List<Integer> newList = new ArrayList<Integer>(list1.size() + list2.size());
+		// Add all elements of two lists into the new list
+		newList.addAll(list1);
+		newList.addAll(list2);
+		return newList;
+	}
+	
+	/** Inserts target label for each of the statements on the list pointed to by p */
+	public void BackPatch(List<Integer> list, int label){
+		// Iterate through the list
+		for(Integer number: list){
+			// Extract quadruple from array
+			String[] quadruple = quads.getQuad(number);
+			// Update the last field in the quadruple
+			quads.setField(number, quadruple.length-1, String.valueOf(label));
+		}
+	}
+	
 	public void Execute (SemanticAction action, Token token)  throws SemanticError {
 		
 		int actionNumber = action.getIndex();
 		
 		System.out.println("calling action : " + actionNumber + " with token " + token.getValue());
+		semanticStackDump();
 //		System.out.println("calling action : " + actionNumber + " with token " + token.getType());
 
 		switch (actionNumber)
@@ -73,15 +300,8 @@ public class SemanticActions {
 			break;
 		}
 		case 3: {
-			if(!(semanticStack.peek() instanceof TokenType)){
-				System.out.println("Expected a TokenType at top of stack");
-			}
 			TokenType type = (TokenType) semanticStack.pop();
 			if(isArray){ /* Array declaration */
-				
-				if(!(semanticStack.peek() instanceof Constant)){
-					System.out.println("Expected a constant token at top of stack (in an array declaration)" );
-				}
 		//////// Get the value of the upper bound integer constant from the stack. 
 				// If this value is not yet in the constant table, insert it. 
 				Constant upToken = (Constant) semanticStack.pop();
@@ -89,29 +309,21 @@ public class SemanticActions {
 				/* Look up the string in the constant table. If not found, insert a new entry */
 				ConstantEntry upConstant = (ConstantEntry) constantTable.lookup(upString);
 				if(upConstant == null){
-					upConstant = new ConstantEntry(upString, TokenType.INTCONSTANT);
+					upConstant = new ConstantEntry(upString, TokenType.INTEGER);
 					constantTable.insert(upConstant);
 				}
 				int upperBound = upConstant.getIntValue();
-//				int upperBound = Integer.parseInt(upToken.getValue());
-//				int upperBound = Integer.parseInt((String) semanticStack.pop());
-				if(!(semanticStack.peek() instanceof Constant)){
-					System.out.println("Expected a constant token at top of stack (in an array declaration)" );
-				}
 		/////// Get value of lower bound integer from the stack. Insert into constant table
 				Constant lowToken = (Constant) semanticStack.pop();
 				String lowString = lowToken.getValue();
 				/* Look up the string in the constant table. If not found, insert a new entry */
 				ConstantEntry lowConstant = (ConstantEntry) constantTable.lookup(lowString);
 				if(lowConstant == null){
-					lowConstant = new ConstantEntry(lowString, TokenType.INTCONSTANT);
+					lowConstant = new ConstantEntry(lowString, TokenType.INTEGER);
 					constantTable.insert(lowConstant);
 				}
 				// Calculate the lower bound
 				int lowerBound = lowConstant.getIntValue();
-//				int lowerBound = Integer.parseInt(lowToken.getValue());
-//				int lowerBound = Integer.parseInt((String) semanticStack.pop());
-				
 				int memorySize = (upperBound - lowerBound)+1;
 				// For each ID on the semantic stack: 
 				while(!semanticStack.isEmpty() && semanticStack.peek() instanceof Identifier){
@@ -122,12 +334,26 @@ public class SemanticActions {
 					if(global){
 						arrEntry.setAddress(globalMemory);
 						globalMemory += memorySize;
+						// If there are multiply declared variables, print an error message
+						if(globalTable.lookup(id.getValue())!= null){
+							try{
+								throw SemanticError.MultiplyDeclaredVariable(lexer.getLineNumber(),
+										lexer.getCurrentLine(), id.getValue());
+							}catch(SemanticError e){ System.out.println(e); }
+						}
 						globalTable.insert(arrEntry);
 					}
 					// If in local environment, insert into local table 
 					else{
 						arrEntry.setAddress(localMemory);
 						localMemory += memorySize;
+						// If there are multiply declared variables, print an error message
+						if(localTable.lookup(id.getValue())!= null){
+							try{
+								throw SemanticError.MultiplyDeclaredVariable(lexer.getLineNumber(),
+										lexer.getCurrentLine(), id.getValue());
+							}catch(SemanticError e){ System.out.println(e); }
+						}
 						localTable.insert(arrEntry);
 					}
 				}
@@ -142,12 +368,26 @@ public class SemanticActions {
 					if(global){
 						varEntry.setAddress(globalMemory);
 						globalMemory++;
+						// If variable is already declared, print an error message
+						if(globalTable.lookup(id.getValue())!= null){
+							try{
+								throw SemanticError.MultiplyDeclaredVariable(lexer.getLineNumber(),
+										lexer.getCurrentLine(), id.getValue());
+							}catch(SemanticError e){ System.out.println(e); }
+						}
 						globalTable.insert(varEntry);
 					}
 					// If in local environment, insert into local table
 					else{
 						varEntry.setAddress(localMemory);
 						localMemory++;
+						// If variable is already declared, print error message
+						if(localTable.lookup(id.getValue())!= null){
+							try{
+								throw SemanticError.MultiplyDeclaredVariable(lexer.getLineNumber(),
+										lexer.getCurrentLine(), id.getValue());
+							}catch(SemanticError e){ System.out.println(e); }
+						}
 						localTable.insert(varEntry);
 					}
 				}
@@ -166,11 +406,23 @@ public class SemanticActions {
 		case 7: {	// Push CONSTANT
 			// The token passed should be a constant, so we just push it onto the stack
 			// It must be an integer, since it is inside an array declaration
-			if(token.getType()!= TokenType.INTCONSTANT){
-				/////// ERROR!!
-				System.out.println("ERROR");
-			}
 			semanticStack.push(token);
+			break;
+		}
+		case 9: { // Only called when in global environment, at the start of the program
+			// For each id on semantic stack
+			while(semanticStack.peek() instanceof Identifier){
+				Identifier id = (Identifier) semanticStack.pop();
+				// Insert id into symbol table
+				VariableEntry entry = new VariableEntry(id.getValue(), id.getType());
+				entry.makeReserved(); // mark as restricted
+				globalTable.insert(entry);
+			}
+			insert = true;	// Insert mode
+			// Generate code
+			generate("CODE");
+			generate("call", globalTable.lookup("MAIN"), "0");
+			generate("exit");
 			break;
 		}
 		case 13: {	// Push ID
@@ -178,15 +430,703 @@ public class SemanticActions {
 			semanticStack.push(token);
 			break;
 		}
+		case 22: {
+			EType eType = (EType)semanticStack.pop();
+			if(eType != EType.RELATIONAL){
+				throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+			}
+			// ****** TO FIX
+			// Peek or pop at E.True
+			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
+			List<Integer> ETrue = (List<Integer>) semanticStack.peek();
+			semanticStack.push(EFalse);
+			BackPatch(ETrue, quads.getNextQuad());
+			break;
+		}
+		case 24: {
+			Integer beginLoop = quads.getNextQuad();
+			semanticStack.push(beginLoop);
+			break;
+		}
+		case 25: {
+			EType eType = (EType)semanticStack.pop();
+			if(eType != EType.RELATIONAL){
+				throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+			}
+			// ****** TO FIX
+			// Peek or pop at E.True
+			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
+			List<Integer> ETrue = (List<Integer>) semanticStack.peek();
+			semanticStack.push(EFalse);
+			BackPatch(ETrue, quads.getNextQuad());
+			break;
+		}
+		case 26: {
+			Integer beginLoop = (Integer)semanticStack.pop();
+			// ******** TO FIX
+			// Pop off stack in reverse order?
+			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
+			List<Integer> ETrue = (List<Integer>) semanticStack.pop();
+			BackPatch(EFalse, quads.getNextQuad());
+			break;
+		}
+		case 27: {
+			// Create new list of integers
+			List<Integer> SkipElse = makeList(quads.getNextQuad());
+			/// ******** TO FIX how to get to E.False??? 
+			List<Integer> EFalse = null;
+			for(Iterator itr = semanticStack.iterator();itr.hasNext();)  {
+		        Object obj = itr.next();
+		        if(obj instanceof List){
+		        	EFalse = (List<Integer>) obj;
+		        	break;
+		        }
+		      }
+			semanticStack.push(SkipElse);
+			generate("goto", "_");
+			BackPatch(EFalse, quads.getNextQuad());
+			break;
+		}
+		case 28: {
+			// ******** TO FIX
+			// Pop off stack in reverse order?
+			List<Integer> SkipElse = (List<Integer>) semanticStack.pop();
+			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
+			List<Integer> ETrue = (List<Integer>) semanticStack.pop();
+			BackPatch(SkipElse, quads.getNextQuad());
+			break;
+		}
+		case 29: {
+			// ******** TO FIX
+			// Pop off stack in reverse order?
+			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
+			List<Integer> ETrue = (List<Integer>) semanticStack.pop();
+			BackPatch(EFalse, quads.getNextQuad());
+			break;
+		}
+		case 30: {
+			SymbolTableEntry entry;
+			String idName = token.getValue();
+			// If local environment, check local table
+			if(!global){
+				entry = localTable.lookup(idName);
+				// If it is found in local table, push onto stack and end the action
+				if(entry != null){
+					semanticStack.push(entry);
+					semanticStack.push(EType.ARITHMETIC);
+					break;
+				}
+			}
+			// If in global environment, or if the token was NOT found in local table, 
+			// check the local table
+			entry = globalTable.lookup(idName);
+			if(entry == null){ // If the id is not found in symbol table
+				entry = new VariableEntry(token.getValue(), token.getType());
+				// Sets flag to indicate entry was entered as result of error condition
+				((VariableEntry) entry).makeError();
+				// Insert into global table to prevent further errors
+				globalTable.insert(entry);
+//				semanticStack.push(entry);
+				// Throw and exception, but keep executing
+				try{
+					throw SemanticError.UndeclaredVariable(lexer.getIndexNumber(), lexer.getCurrentLine(), idName);
+				}catch(SemanticError e){
+					System.out.println(e.toString());
+				}
+				// Insert the token into the symbol table
+			}
+			semanticStack.push(entry);
+			semanticStack.push(EType.ARITHMETIC);
+			break;
+		}
+		case 31: {
+			EType eType = (EType)semanticStack.pop();
+			if(eType != EType.ARITHMETIC){
+				throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+			}
+			SymbolTableEntry id2 = (SymbolTableEntry) semanticStack.pop();
+			SymbolTableEntry offset = (SymbolTableEntry) semanticStack.pop();
+			SymbolTableEntry id1 = (SymbolTableEntry) semanticStack.pop();
+			// Check types
+			int typeCheck = typeCheck(id1,id2);
+			if(typeCheck == 3) System.out.println("Error from case 31");
+			if(typeCheck == 2){ // id1 is real, id2 is int
+				// Convert id2 to real number
+				VariableEntry temp = create("t", TokenType.REAL);
+				generate("ltof", id2, temp);
+				// If no subscript, generate a simple assignment statement
+				if(offset.isNull()){
+					generate("move", temp, id1);
+				}
+				else{ // if offset is not null: store inside array
+					generate("stor", temp, offset, id1);
+				}
+			}
+			else{ // Both share same types
+				if(offset.isNull()){
+					// Assignment statement: Move value at address id2 to value at addr id1
+					generate("move", id2, id1);
+				}
+				else{
+					// Store statement: store value in array
+					generate("store", id2, offset, id1);
+				}
+			}
+			break;
+		}
+		case 32: {
+//			// Look at id at top of stack
+//			SymbolTableEntry entry = (SymbolTableEntry)semanticStack.peek();
+			// Look up current token (id) in the symbol table
+			SymbolTableEntry entry = null;
+			if(!global){
+				entry = localTable.lookup(token.getValue());
+			}
+			if(entry == null){
+				entry = globalTable.lookup(token.getValue());
+			}
+			// If the id is not an array entry, throw an error
+			if(!entry.isArray()){
+				VariableEntry id = (VariableEntry) entry;
+				// Prevents the same error messages from being printed over and over again
+				if(!id.isError()){
+					// Flag as error entry
+					id.makeError();
+					try{
+						throw SemanticError.SimpleSubscripts(lexer.getLineNumber(), 
+								lexer.getCurrentLine(), entry.getName());
+					}catch(SemanticError e){
+						e.toString();
+					}
+				}
+			}
+			break;
+		}
+		case 33: {
+			EType eType = (EType)semanticStack.pop();
+			
+			// **** if(EType != Arithmetic, error)
+			// **** pop EType
+			// Look at id at top of stack
+			// POP??
+			SymbolTableEntry id = (SymbolTableEntry)semanticStack.peek();
+			// If it's not an integer variable, throw error
+			if(id.getType() != TokenType.INTEGER){
+				throw SemanticError.IntegerExpected(lexer.getLineNumber(),
+						lexer.getCurrentLine(), id.getName());
+			}
+			SymbolTableEntry temp1 = (SymbolTableEntry)semanticStack.pop();
+			// ARRAY_NAME is first array id on stack
+			ArrayEntry arrEntry = null;
+			Iterator<Object> iter = semanticStack.iterator();
+			while(iter.hasNext()){
+				Object obj = iter.next();
+				if(obj instanceof ArrayEntry){
+					arrEntry = (ArrayEntry)obj;
+				}
+			}
+//			// Check if array indices are in bounds
+//			generate("blt", id, String.valueOf(arrEntry.getLowerBound()), String.valueOf(quads.getNextQuad()+3));
+//			generate("blt", id, String.valueOf(arrEntry.getUpperBound()), String.valueOf(quads.getNextQuad()+2));
+//			generate("goto", String.valueOf(quads.getNextQuad()+3));
+//			generate("print", "Array index out of bounds");
+//			generate("exit");
+			
+			VariableEntry temp = create("t", TokenType.INTEGER);
+			// Generate code
+			generate("sub", temp1, String.valueOf(arrEntry.getLowerBound()), temp);
+			// Push temp variable onto stack
+			semanticStack.push(temp);
+			break;
+		}
+		case 34: { // **** CHANGED
+			if(semanticStack.peek() instanceof SymbolTableEntry){
+				// Look at id at top of stack
+				SymbolTableEntry id = (SymbolTableEntry) semanticStack.peek();
+				// If id on stack is a function, call action 52
+				if(id.isFunction()){
+					Execute(SemanticAction.action52, token);
+				}
+				else{
+					SymbolTableEntry entry = new SymbolTableEntry("Null");
+					entry.makeNull();
+					semanticStack.push(entry);
+				}
+			}
+			// Else push null offset
+			else{
+				SymbolTableEntry entry = new SymbolTableEntry("Null");
+				entry.makeNull();
+				semanticStack.push(entry);
+			}
+			break;
+		}
+		case 38: {
+			EType eType = (EType)semanticStack.pop();
+			// If ETYPE != ARITHMETIC, throw an error message
+			if(eType != EType.ARITHMETIC){
+				try{
+					throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+				}
+				catch(SemanticError e){
+					System.out.println(e.toString());
+				}
+			}
+			// Push the RELOP onto the stack
+			semanticStack.push(token);
+			break;
+		}
+		case 39: {
+			EType eType = (EType)semanticStack.pop();
+			// If ETYPE != ARITHMETIC, throw an error message
+			if(eType != EType.ARITHMETIC){
+				try{
+					throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+				}
+				catch(SemanticError e){
+					System.out.println(e.toString());
+				}
+			}
+			// Pop operands and operator
+			SymbolTableEntry id2 = (SymbolTableEntry)semanticStack.pop();
+			Operator op = (Operator)semanticStack.pop();
+			String tviCode = op.getTVICode(); // TVI opcode
+			SymbolTableEntry id1 = (SymbolTableEntry)semanticStack.pop();
+			generate(";; Conditional execution: compare " + id1.getName() + " and " + id2.getName());
+			// Check the operand types
+			int operandTypes = typeCheck(id1, id2);
+			if(operandTypes == 2){ // id1 is real and id2 is integer
+				// First convert id2 to a real number
+				VariableEntry temp = create("t", TokenType.REAL);
+				generate("ltof", id2, temp);
+				// Then carry out the branch execution
+				generate(tviCode, id1, temp, "_");
+			}
+			else if(operandTypes == 3){ // id1 is integer and id2 is real
+				VariableEntry temp = create("t", TokenType.REAL);
+				// First convert id1 to a real number
+				generate("ltof", id1, temp);
+				// Then carry out the branch execution
+				generate(tviCode, temp, id2, "_");
+			}
+			else{ // both operands are same type
+				generate(tviCode, id1, id2, "_");
+			}
+			generate("goto", "_");
+			// Create goto labels for true and false conditions
+			List<Integer> ETrue = makeList(quads.getNextQuad() - 2);
+			List<Integer> EFalse = makeList(quads.getNextQuad() - 1);
+			// push onto stack
+			semanticStack.push(ETrue);
+			semanticStack.push(EFalse);
+			semanticStack.push(EType.RELATIONAL);
+			break;
+		}
+		case 40: { // PUSH SIGN
+			semanticStack.push(token);
+			break;
+		}
+		case 41: {
+			EType eType = (EType)semanticStack.pop();
+			if(eType != EType.ARITHMETIC){
+				throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+			}
+			// Pop id, sign
+			SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
+			Token sign = (Token)semanticStack.pop();
+			// If the sign on stack is a unary minus, negate the id's value and place it in a temp variable
+			if(sign.getType() == TokenType.UNARYMINUS){
+				VariableEntry temp = create("t", id.getType());
+				generate("uminus", id, temp);
+				semanticStack.push(temp);
+			}
+			// Otherwise remove the sign from the stack and push the id again
+			else{
+				semanticStack.push(id);
+			}
+			semanticStack.push(EType.ARITHMETIC);
+			break;
+		}
+		case 42: {
+			EType eType = (EType)semanticStack.pop();
+			// If operator == OR
+			if(token.getValue().equals("OR")){
+				if(eType != EType.RELATIONAL){
+					throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+				}
+				// or ETrue instance variable
+				List<Integer> EFalse = (List<Integer>)semanticStack.pop();
+				BackPatch(EFalse, quads.getNextQuad());
+			}
+			else{
+				// check EType == Arithmetic
+				if(eType != EType.ARITHMETIC){
+					throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+				}
+			}
+			// Push Addop
+			semanticStack.push(token);
+			break;
+		}
+		case 43: {
+			// Pop expression type off
+			EType eType = (EType) semanticStack.pop();
+			if(eType == EType.RELATIONAL){ // If EType is relational
+				List<Integer> ETrue1 = (List<Integer>) semanticStack.pop();
+				List<Integer> EFalse1 = (List<Integer>) semanticStack.pop();
+				Operator operator = (Operator) semanticStack.pop();
+				List<Integer> ETrue2 = (List<Integer>)semanticStack.pop();
+				List<Integer> EFalse2 = (List<Integer>)semanticStack.pop();
+				//Push various things onto stack
+				if(operator.getValue().equals("OR")){
+					List<Integer> newETrue = merge(ETrue1, ETrue2);
+					List<Integer> newEFalse = EFalse2;
+					semanticStack.push(newETrue);
+					semanticStack.push(newEFalse);
+					semanticStack.push(EType.RELATIONAL);
+				}
+			}
+			else{ // EType is arithmetic
+				if(eType != EType.ARITHMETIC){
+					throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+				}
+				// Pop the operands and operators off of the stack
+				SymbolTableEntry id2 = (SymbolTableEntry) semanticStack.pop();
+				Operator op = (Operator)semanticStack.pop();
+				SymbolTableEntry id1 = (SymbolTableEntry) semanticStack.pop();
+				// TVI opcode
+				String opCode = op.getTVICode();
+				switch(typeCheck(id1, id2)){
+				case 0: { // Both integers
+					VariableEntry temp = create("t", TokenType.INTEGER);
+					generate(opCode, id1, id2, temp);
+					semanticStack.push(temp);
+					break;
+				}
+				case 1: { // Both real
+					VariableEntry temp = create("t", TokenType.REAL);
+					generate("f" + opCode, id1, id2, temp);
+					semanticStack.push(temp);
+					break;
+				}
+				case 2: { // id1 is real and id2 is integer
+					// Convert id2 to real, and carry out operations
+					VariableEntry temp1 = create("t", TokenType.REAL);
+					generate("ltof", id2, temp1);
+					VariableEntry temp2 = create("t", TokenType.REAL);
+					generate("f" + opCode, id1, temp1, temp2);
+					semanticStack.push(temp2);
+					break;
+				}
+				case 3: { // id1 is integer and id2 is real
+					// Convert id1 to real, and carry out operations
+					VariableEntry temp1 = create("t", TokenType.REAL);
+					generate("ltof", id1, temp1);
+					VariableEntry temp2 = create("t", TokenType.REAL);
+					generate("f" + opCode, temp1, id1, temp2);
+					semanticStack.push(temp2);
+					break;
+				}
+				default: {
+					System.out.println("ERROR");
+					break;
+				}
+				} // End switch
+				semanticStack.push(EType.ARITHMETIC);
+			}
+			break;
+		}
+		case 44: {
+			EType eType = (EType)semanticStack.pop();
+			if(eType == EType.RELATIONAL){
+				// If the operator is AND, backpatch
+				if(token.getValue().equals("AND")){
+					List<Integer> ETrue = (List<Integer>)semanticStack.peek();
+					BackPatch(ETrue, quads.getNextQuad());
+				}
+			}
+			semanticStack.push(token);
+			break;
+		}
+		case 45: {
+			EType eType = (EType)semanticStack.pop();
+			// If operator == AND
+//			if(opType.equals("AND")){
+			if(eType == EType.RELATIONAL){
+				if(eType != EType.RELATIONAL) {
+					throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+				}
+				// Pop lists off in reverse order
+				List<Integer> EFalse2 = (List<Integer>) semanticStack.pop();
+				List<Integer> ETrue2 = (List<Integer>) semanticStack.pop();
+				Operator op = (Operator) semanticStack.pop();
+				List<Integer> EFalse1 = (List<Integer>)semanticStack.pop();
+				List<Integer> ETrue1 = (List<Integer>)semanticStack.pop();
+				if(op.getValue().equals("AND")){
+					List<Integer> newETrue = ETrue2;
+					List<Integer> newEFalse = merge(EFalse1, EFalse2);
+					semanticStack.push(newETrue);
+					semanticStack.push(newEFalse);
+					semanticStack.push(EType.RELATIONAL);
+				}
+			}
+//			}
+			else{
+				// Pop things off the stack: of the form op1 operator op2
+				//Pop second operand
+				SymbolTableEntry id2 = (SymbolTableEntry) semanticStack.pop();
+				// Pop operator
+				Operator op = (Operator) semanticStack.pop();
+				// Pop first operand
+				SymbolTableEntry id1 = (SymbolTableEntry) semanticStack.pop();
+				String opType = op.getValue();					// String representation of operation
+				String tviOpcode = op.getTVICode(); // TVI representation of operation
+				if(eType != EType.ARITHMETIC) {
+					throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
+				}
+				int types = typeCheck(id1, id2);
+				// Modulus requires integer operands
+				if((types != 0) && opType.equals("MOD")){
+					throw SemanticError.ModError(lexer.getLineNumber(), lexer.getCurrentLine(),
+							id1.getName(), id2.getName());
+				}
+				// Branched execution depending on the types of the operands
+				if(types == 0){ // Both operands are ints
+					if(opType.equals("MOD")){ // Modulus tvi code
+						VariableEntry temp1 = create("t", TokenType.INTEGER);
+						generate("move", id1, temp1);
+						VariableEntry temp2 = create("t", TokenType.INTEGER);
+						generate("move", temp1, temp2);
+						generate("sub", temp1, id2, temp2);
+						generate("bge", temp1, id2, String.valueOf(quads.getNextQuad()-2)); // ******* //
+						semanticStack.push(temp1);
+					}
+					else if(opType.equals("/")){ // Division operation
+						// First convert both operands into real numbers, and then 
+						// carry out real-number division, store in a temporary variable
+						VariableEntry temp1 = create("t", TokenType.REAL);
+						generate("ltof", id1, temp1);
+						VariableEntry temp2 = create("t", TokenType.REAL);
+						generate("ltof", id2, temp2);
+						VariableEntry temp3 = create("t", TokenType.REAL);
+						generate("fdiv", temp1, temp2, temp3);
+						semanticStack.push(temp3);
+					}
+					else{
+						VariableEntry temp = create("t", TokenType.INTEGER);
+						generate(tviOpcode, id1, id2, temp);
+						semanticStack.push(temp);
+					}
+				}
+				else if(types == 1){ // If both ids are reals
+					 // Integer Division
+					if(opType.equals("DIV")){
+						// Convert both operands to integers, and divide
+						VariableEntry temp1 = create("t", TokenType.INTEGER);
+						generate("ftol", id1, temp1);
+						VariableEntry temp2 = create("t", TokenType.INTEGER);
+						generate("ftol", id2, temp1);
+						VariableEntry temp3 = create("t", TokenType.INTEGER);
+						generate("div", temp1, temp2, temp3);
+						semanticStack.push(temp3);
+					}
+					// Multiplication(*) or Division(/)
+					else {
+						VariableEntry temp = create("t", TokenType.REAL);
+						generate("f" + tviOpcode, id1, id2, temp);
+						semanticStack.push(temp);
+					}
+				}
+				else if(types == 2){ // If id1 is a real and id2 is an int
+					// If integer division
+					if(opType.equals("DIV")){ 
+						// Convert id1 to an integer
+						VariableEntry temp1 = create("t", TokenType.INTEGER);
+						generate("ftol", id1, temp1);
+						VariableEntry temp2 = create("t", TokenType.INTEGER);
+						// carry out integer division, and store in temp variable
+						generate("div", temp1, id2, temp2);
+						semanticStack.push(temp2);
+					}
+					// Multiplication(*) or Division(/)
+					else{
+						// Convert id2 into a real
+						VariableEntry temp1 = create("t", TokenType.REAL);
+						generate("ltof", id2, temp1);
+						VariableEntry temp2 = create("t", TokenType.REAL);
+						// Carry out floating-poing operation, store in temp2
+						generate("f" + tviOpcode, id1, temp1, temp2);
+						semanticStack.push(temp2);
+					}
+				}
+				else if(types == 3){ // If id1 is an int and id2 is a real
+					// If integer division
+					if(opType.equals("DIV")){ 
+						// Convert id2 to an integer
+						VariableEntry temp1 = create("t", TokenType.INTEGER);
+						generate("ftol", id2, temp1);
+						// carry out integer division, and store in temp variable
+						VariableEntry temp2 = create("t", TokenType.INTEGER);
+						generate("div", id1, temp1, temp2);
+						semanticStack.push(temp2);
+					}
+					// Multiplication(*) or Division(/)
+					else{
+						// Convert id1 into a real
+						VariableEntry temp1 = create("t", TokenType.REAL);
+						generate("ltof", id1, temp1);
+						VariableEntry temp2 = create("t", TokenType.REAL);
+						// Carry out floating-poing operation, store in temp2
+						generate("f" + tviOpcode, temp1, id2, temp2);
+						semanticStack.push(temp2);
+					}
+				}
+				semanticStack.push(EType.ARITHMETIC);
+			}
+			break;
+		}
+		case 46: {
+			// If token is an identifier, lookup in symbol table and push its entry onto the stack
+			if(token instanceof Identifier){
+				SymbolTableEntry entry;
+				String idName = token.getValue();
+				// Lookup the identifier in symbol table
+				// If local environment, check local table
+				if(!global){
+					entry = localTable.lookup(idName);
+					// If it is found in local table, push onto stack and end the action
+					if(entry != null){
+						semanticStack.push(entry);
+						break; // break the switch execution
+					}
+				}
+				// If in global environment, or if the token was NOT found in local table, 
+				// check the local table
+				entry = globalTable.lookup(idName);
+				if(entry == null){ // If the id is not found in symbol table
+					entry = new VariableEntry(token.getValue(), token.getType());
+					// Sets flag to indicate entry was entered as result of error condition
+					((VariableEntry)entry).makeError();
+					// Insert into global table to prevent further errors
+					globalTable.insert(entry);
+					// Throw an error message, but keep executing
+					try{
+						throw SemanticError.UndeclaredVariable(lexer.getIndexNumber(), lexer.getCurrentLine(), idName);
+					}catch(SemanticError e){
+						System.out.println(e.toString());
+					}
+					// Insert the token into the symbol table
+				}
+				semanticStack.push(entry);
+			}
+			// If the token is a constant, lookup in the constant table
+			else if(token instanceof Constant){
+				String value = token.getValue();
+				ConstantEntry entry = (ConstantEntry) constantTable.lookup(value);
+				// If this entry is not found in the table
+				if(entry == null){
+					// Create a new entry: either of Integer or Real;
+					if(token.getType() == TokenType.INTCONSTANT){
+						entry = new ConstantEntry(value, TokenType.INTEGER);
+					}
+					else{
+						entry = new ConstantEntry(value, TokenType.REAL);
+					}
+					constantTable.insert(entry);
+				}
+				semanticStack.push(entry);
+			}
+			semanticStack.push(EType.ARITHMETIC);
+			break;
+		}
+		case 47: {
+			EType eType = (EType)semanticStack.pop();
+			List<Integer> oldETrue = (List<Integer>) semanticStack.pop();
+			List<Integer> oldEFalse = (List<Integer>) semanticStack.pop();
+			// Switch ETrue and EFalse, for bne statements
+			List<Integer> newETrue = oldEFalse;
+			List<Integer> newEFalse = oldETrue;
+			// Push new entries onto stack
+			semanticStack.push(newETrue);
+			semanticStack.push(newEFalse);
+			semanticStack.push(EType.RELATIONAL);
+			break;
+		}
+		case 48: {
+			// Pop offset
+			SymbolTableEntry offset = (SymbolTableEntry) semanticStack.pop();
+			if(!offset.isNull()){
+				// If offset.type != integer, error
+				if(offset.getType() != TokenType.INTEGER){
+					throw SemanticError.IntegerExpected(lexer.getLineNumber(),
+							lexer.getCurrentLine(), offset.getName());
+				}
+				else{
+					// Pop EType
+					EType eType = (EType)semanticStack.pop();
+					// Pop ID
+					SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
+					// Create temporary var
+					VariableEntry temp = create("t", id.getType());
+					// Generate code
+					generate("load", id, offset, temp);
+					// Push elements onto stack
+					semanticStack.push(temp);
+					semanticStack.push(EType.ARITHMETIC);
+				}
+			}
+			// Else keep the offset popped off
+			break;
+		}
+		case 53: {
+			EType eType = (EType) semanticStack.pop();
+			SymbolTableEntry id = (SymbolTableEntry)semanticStack.peek();
+			if(id.isFunction()){
+				// Throw error
+				if(id != currentFunction){
+					throw SemanticError.WrongFunction(lexer.getLineNumber(), 
+							lexer.getCurrentLine(), id.getName());
+				}
+				FunctionEntry func = (FunctionEntry)semanticStack.pop();
+				// Push id.result
+				semanticStack.push(func.getResult());
+				semanticStack.push(EType.ARITHMETIC);
+			}
+			break;
+		}
+		case 54: {
+			SymbolTableEntry id = globalTable.lookup(token.getValue());
+			// If ID is not a procedure, throw error
+			if(id == null || !id.isProcedure()){
+				throw SemanticError.NonProcedure(lexer.getLineNumber(), 
+						lexer.getCurrentLine(), id.getName());
+			}
+			break;
+		}
+		case 55: {
+			// BackPatch(globalAlloc, globalMemory)
+			quads.setField(globalAlloc, 1, Integer.toString(globalMemory));
+			generate("free", Integer.toString(globalMemory));
+			generate("PROCEND");
+			break;
+		}
+		case 56: {
+			// GEN(PROCBEGIN main)
+			generate("PROCBEGIN", globalTable.lookup("MAIN"));
+			// GLOBAL_STORE = NEXTQUAD
+			globalAlloc= quads.getNextQuad();
+			// GEN(ALLOC, _)
+			generate("alloc", "0");
+			break;
+		}
 		default: {
 			// Nothing!
 		} 
 
 		}// End switch
-		
 	}
 	
-	public ArrayDeque getStack(){
+	public ArrayDeque<Object> getStack(){
 		return semanticStack;
 	}
 	public boolean isInsert(){
@@ -202,7 +1142,13 @@ public class SemanticActions {
 	public void semanticStackDump(){
 		Iterator iter = semanticStack.iterator();
 		while(iter.hasNext()){
-			System.out.println(iter.next());
+			Object next = iter.next();
+			if(next instanceof SymbolTableEntry){
+				((SymbolTableEntry) next).print();
+			}
+			else{
+				System.out.println(next);
+			}
 		}
 	}
 	
@@ -214,6 +1160,49 @@ public class SemanticActions {
 	public void dumpConstantTable(){
 		constantTable.dumpTable();
 	}
+	/** Prints generated code */
+	public void printGeneratedCode(){
+		quads.print();
+	}
+	public Quadruples getQuads(){
+		return quads;
+	}
+	
+//	/** Converts an addOp's integer representation to a TVI code 
+//	 * Only returns valid TVI codes for 1 (add) and 2 (sub)*/
+//	public String convertAddOp(int i){
+//		if(i == 1) return "add";
+//		else if(i == 2) return "sub";
+//		else if(i == 3) return "or";
+//		else return "error";
+//	}
+//	
+//	/** Converts a MulOp's integer representation to a TVI code 
+//	 * Only returns valid TVI codes for 1 (mul) and 2 (sub)*/
+//	public String convertMulop(int i){
+//		if(i == 1) return "mul";
+//		else if(i == 2) return "div";
+//		else return "error";
+//	}
+//	
+//	/** Converts a RelOp's integer representation to a TVI code 
+//	 * Only returns valid TVI codes for 1 (mul) and 2 (sub)*/
+//	public String convertRelop(int i){
+//		// =
+//		if(i == 1) return "bge";
+//		// <>
+//		else if(i == 2) return "bne";
+//		// <
+//		else if(i == 3) return "blt";
+//		// >
+//		else if(i == 4) return "bgt";
+//		// <=
+//		else if(i == 5) return "ble";
+//		// >=
+//		else if(i == 6) return "bge";
+//		else return "error";
+//	}
+
 
 
 }

@@ -28,7 +28,6 @@ public class Parser {
 		stack = new ArrayDeque<GrammarSymbol>();
 		rhsTable = new RHSTable();
 		parseTable = new ParseTable();
-		semanticActions = new SemanticActions();
 	}
 	
 	/** Constructor for the parser. 
@@ -39,6 +38,7 @@ public class Parser {
 	public Parser(String fileName){
 		this();
 		lexer = new Tokenizer(fileName);
+		semanticActions = new SemanticActions(this);
 	}
 	
 	/** Method to parse the file. Repeatedly retrieves tokens from the lexical analyzer.
@@ -47,7 +47,6 @@ public class Parser {
 	 */
 	public void parse() throws CompilerError{
 		currentToken = lexer.GetNextToken();	// Get first token from input
-		prevToken = currentToken;				// Initialize to prevent null pointer exception
 		// Clear stack at the start
 		stack.clear();
 		// Push the end marker and the start symbol on the stack
@@ -122,9 +121,9 @@ public class Parser {
 				throw ParseError.UnknownSymbolType(lexer.getLineNumber(), lexer.getCurrentLine(), predicted);
 			}
 		} // End While Loop
-		System.out.println();
-		semanticActions.dumpGlobalTable();
-		semanticActions.dumpConstantTable();
+//		semanticActions.dumpGlobalTable();
+//		semanticActions.dumpConstantTable();
+		semanticActions.printGeneratedCode();
 	}
 	
 	/** Method to print out the contents of the stack. 
@@ -185,6 +184,13 @@ public class Parser {
 			|| (currentToken.getType() == TokenType.SEMICOLON && predicted == TokenType.END)){
 			throw ParseError.ParserQuit();
 		}
+	}
+	
+	public void printGlobalTable(){
+		semanticActions.dumpGlobalTable();
+	}
+	public Tokenizer getLexer(){
+		return lexer;
 	}
 
 }

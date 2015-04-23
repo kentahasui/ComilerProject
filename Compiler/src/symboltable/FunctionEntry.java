@@ -6,14 +6,14 @@ import grammarsymbols.TokenType;
 public class FunctionEntry extends SymbolTableEntry{
 	int numberOfParameters;
 	List<TokenType> parameterInfo;
-	TokenType result;
+	SymbolTableEntry result;
 	
 	public FunctionEntry(String name){
 		super(name, TokenType.FUNCTION);
 		parameterInfo = new LinkedList<TokenType>();
 	}
 	
-	public FunctionEntry(String name, int numberOfParameters, List<TokenType> parameterInfo, TokenType result){
+	public FunctionEntry(String name, int numberOfParameters, List<TokenType> parameterInfo, SymbolTableEntry result){
 		this.numberOfParameters = numberOfParameters;
 		this.parameterInfo = parameterInfo;
 		this.result = result;
@@ -26,7 +26,7 @@ public class FunctionEntry extends SymbolTableEntry{
 	public List<TokenType> getParameterInfo(){
 		return parameterInfo;
 	}
-	public TokenType getResultType(){
+	public SymbolTableEntry getResult(){
 		return result;
 	}
 	
@@ -37,7 +37,7 @@ public class FunctionEntry extends SymbolTableEntry{
 	public void setParameterInfo(List<TokenType> paramInfo){
 		this.parameterInfo = paramInfo;
 	}
-	public void setResultType(TokenType result){
+	public void setResult(SymbolTableEntry result){
 		this.result = result;
 	}
 	
@@ -57,7 +57,7 @@ public class FunctionEntry extends SymbolTableEntry{
 			System.out.print(t.toString());
 		}
 		System.out.println();
-		System.out.println("   Result  : " + this.getResultType());
+		System.out.println("   Result  : " + this.getResult());
 		System.out.println();
 	}
 

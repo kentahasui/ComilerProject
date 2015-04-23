@@ -27,12 +27,12 @@ public class Token{
 		return this.type.toString();
 	}
 	
-	/** Gets the String representation of an Operator token's type. Returns 
-	 * the empty string for non-operator tokens
-	 */
-	public String getOpType(){
-		return "";
-	}
+//	/** Gets the String representation of an Operator token's type. Returns 
+//	 * the empty string for non-operator tokens
+//	 */
+//	public String getOpType(){
+//		return "";
+//	}
 	
 	@Override
 	public String toString(){
