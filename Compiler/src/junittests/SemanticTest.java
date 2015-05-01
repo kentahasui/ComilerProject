@@ -12,7 +12,6 @@ import symboltable.*;
 public class SemanticTest {
 	Token t = new Token(TokenType.PROGRAM); // Generic token
 	
-	
 	/** Tests Semantic Actions 1, 2, 4, 6, 7 and 13 */
 	@Test
 	public void testPhase1() throws SemanticError{
@@ -44,10 +43,10 @@ public class SemanticTest {
 		ParseDriver driver = new ParseDriver("resources/pascal_files/simple.pas");
 		driver.run();
 		
-		System.out.println();
-		System.out.println("Mod Test");
-		driver = new ParseDriver("resources/pascal_files/mod.pas");
-		driver.run();
+//		System.out.println();
+//		System.out.println("Mod Test");
+//		driver = new ParseDriver("resources/pascal_files/mod.pas");
+//		driver.run();
 		
 		System.out.println();
 		System.out.println("Expression Test");
@@ -72,9 +71,24 @@ public class SemanticTest {
 		driver.run();
 		
 		System.out.println();
-		System.out.println("If test");
-		driver = new ParseDriver("resources/pascal_files/if.pas");
+		System.out.println("If2 test");
+		driver = new ParseDriver("resources/pascal_files/if2.pas");
 		driver.run();
+	}
+	
+	@Test
+	public void TestCompleteCompiler(){
+		System.out.println("If Test");
+		ParseDriver driver = new ParseDriver("resources/pascal_files/if.pas");
+		driver.run();
+		System.out.println("\nProc test");
+		driver = new ParseDriver("resources/pascal_files/proc.pas");
+		driver.run();
+		System.out.println();
+		System.out.println("\nFunc test");
+		driver = new ParseDriver("resources/pascal_files/func.pas");
+		driver.run();
+		
 	}
 	
 	/** Tests the generate function */

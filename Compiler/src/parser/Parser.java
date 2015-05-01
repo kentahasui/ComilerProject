@@ -1,5 +1,6 @@
 package parser;
 import lex.*;
+import java.io.*;
 import semanticActions.SemanticActions;
 import token.*;
 import errors.*;
@@ -123,6 +124,12 @@ public class Parser {
 		} // End While Loop
 //		semanticActions.dumpGlobalTable();
 //		semanticActions.dumpConstantTable();
+		semanticActions.printGeneratedCode();
+		try {
+			System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream("out.tvi")), true));
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		}
 		semanticActions.printGeneratedCode();
 	}
 	

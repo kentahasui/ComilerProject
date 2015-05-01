@@ -9,6 +9,7 @@ public class ArrayEntry extends SymbolTableEntry {
 	int upperBound;
 	/** Lower Bound */
 	int lowerBound;
+	boolean parm = false;
 	
 	/* Constructors */
 	public ArrayEntry(String name){
@@ -48,6 +49,14 @@ public class ArrayEntry extends SymbolTableEntry {
 	}
 	public void setLowerBound(int lower){
 		this.lowerBound = lower;
+	}
+	
+	// this flag indicates if the variable is a parameter to a procedure or function
+	public boolean isParameter() {
+		return parm;
+	}
+	public void setParm(){
+		parm = true;
 	}
 	
 	@Override

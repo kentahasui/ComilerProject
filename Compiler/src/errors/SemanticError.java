@@ -1,6 +1,7 @@
 package errors;
 
 import errors.CompilerError.Type;
+import grammarsymbols.TokenType;
 
 public class SemanticError extends CompilerError{
 	
@@ -76,10 +77,17 @@ public class SemanticError extends CompilerError{
 	public static SemanticError NonProcedure(int lineNumber, String lineContent, String varName){
 		return new SemanticError(Type.NON_PROCEDURE,
 				errorStart(lineNumber, lineContent) +
-				"This variable name is not a procedure: " + varName);
+				"This variable is not a procedure: " + varName);
 	}
 	
 	/** Semantic Error thrown when a function is expected */
+	public static SemanticError NonFunction(int lineNumber, String lineContent, String varName){
+		return new SemanticError(Type.NON_FUNCTION,
+				errorStart(lineNumber, lineContent) +
+				"This variable is not a function: " + varName);
+	}
+	
+	/** Semantic Error thrown when the current function and the actual function do not match up */
 	public static SemanticError WrongFunction(int lineNumber, String lineContent, String varName){
 		return new SemanticError(Type.WRONG_FUNCTION,
 				errorStart(lineNumber, lineContent) +
@@ -113,6 +121,48 @@ public class SemanticError extends CompilerError{
 		return new SemanticError(Type.ETYPE_ERROR_R,
 				errorStart(lineNumber, lineContent) +
 				"Expected a relational expression but received an arithmetic expression");
+	}
+	
+	/** Semantic Error thrown when a declared variable is already reserved */
+	public static SemanticError ReservedVariable(int lineNumber, String lineContent, String varName){
+		return new SemanticError(Type.RESERVED_VARIABLE, 
+				errorStart(lineNumber, lineContent) +
+				"The variable name " + varName + " is reserved. You must choose another name");
+	}
+	
+	/** Semantic Error thrown when the number of parameters on parmCount stack is not equal to the 
+	 * procedure entry's number of parameters
+	 */
+	public static SemanticError ParameterMiscount(int lineNumber, String lineContent, String procName){
+		return new SemanticError(Type.PARAMETER_MISCOUNT, 
+				errorStart(lineNumber, lineContent) +
+				"The number of declared and actual parameters do not match up for procedure: " + procName);
+	}
+	
+	/** Semantic Error thrown when a procedure or function is encountered instead of a constant, variable, 
+	 * array, or function result
+	 */
+	public static SemanticError UnexpectedSubroutine(int lineNumber, String lineContent, String IDName){
+		return new SemanticError(Type.UNEXPECTED_SUBROUTINE, 
+				errorStart(lineNumber, lineContent) +
+				"A constant, variable, array, or function result was expected for: " + IDName);
+	}
+	
+	/** Semantic Error thrown when the parameter types for a function or procedure do not match */
+	public static SemanticError UnmatchedParameterTypes(int lineNumber, String lineContent,
+			String ProcName, String IDName, TokenType actual, TokenType expected){
+		return new SemanticError(Type.UNMATCHED_PARAMETER_TYPES, 
+				errorStart(lineNumber, lineContent) +
+				"The actual parameter types for " + ProcName + " do not match its declaration." 
+				+ "\n>>> For parameter" + IDName + ", " + expected.toString() + " was expected but "
+				+ actual.toString() + "  was encountered");
+	}
+	
+	/** Semantic Error thrown when an array parameter definition does not match its declaration */
+	public static SemanticError ArrayParameterError(int lineNumber, String lineContent, String ProcName, String IDName){
+		return new SemanticError(Type.ARRAY_PARAMETER_ERROR, 
+				errorStart(lineNumber, lineContent) +
+				"The actual parameter " + IDName + " for " + ProcName + " does not match its declaration.");
 	}
 
 }

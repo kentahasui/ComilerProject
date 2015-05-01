@@ -68,10 +68,6 @@ The methods below are not used until later
 	public boolean isReserved() {
 		return reserved;
 	}
-
-	public void setParameter (boolean parm) {
-		this.parm = parm;
-	}
 	
 	public void setParm() {
 		this.parm = true;

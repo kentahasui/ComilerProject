@@ -1,10 +1,11 @@
 package symboltable;
+import java.math.BigDecimal;
+
 import grammarsymbols.TokenType;
 
 public class ConstantEntry extends SymbolTableEntry{
-	
 	int intValue;
-	float realValue;
+	double realValue;
 	
 	public ConstantEntry(String name){
 		super(name);
@@ -24,13 +25,18 @@ public class ConstantEntry extends SymbolTableEntry{
 		if(this.getType() == TokenType.INTEGER){
 			intValue = Integer.parseInt(this.getName());
 		}
+		if(this.getType() == TokenType.REAL){
+			BigDecimal bd = new BigDecimal(this.getName());
+			realValue = bd.doubleValue();
+			this.setName(String.valueOf(realValue));
+		}
 	}
 	
 	public int getIntValue(){
 		return intValue;
 	}
 	
-	public float getRealValue(){
+	public double getRealValue(){
 		return realValue;
 	}
 	

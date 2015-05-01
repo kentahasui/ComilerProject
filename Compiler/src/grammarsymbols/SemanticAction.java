@@ -13,7 +13,7 @@ public enum SemanticAction implements GrammarSymbol
       action43(43), action44(44), action45(45), action46(46), action47(47),
       action48(48), action49(49), action50(50), action51(51), action52(52),
       action53(53), action54(54), action55(55), action56(56), action57(57),
-      action58(58)
+      action58(58), action51Write(100), action51Read(101)
       ;
  
 

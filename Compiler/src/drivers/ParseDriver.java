@@ -42,12 +42,6 @@ public class ParseDriver {
 		else{
 			pd = new ParseDriver(args[0]);
 		}
-		// Print to out.tvi file
-//		try {
-//			System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream("out.tvi")), true));
-//		} catch (FileNotFoundException e) {
-//			e.printStackTrace();
-//		}
 		// Parse the file
 		pd.run();
 		System.out.flush();

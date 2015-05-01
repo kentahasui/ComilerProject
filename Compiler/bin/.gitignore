@@ -1,8 +1,7 @@
-/drivers/
 /semanticActions/
 /symboltable/
 /errors/
-/parser/
-/.DS_Store
 /junittests/
-/token/
+/drivers/
+/parser/
+/lex/

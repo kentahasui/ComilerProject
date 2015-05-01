@@ -1,5 +1,7 @@
 package symboltable;
 
+import java.util.List;
+
 import grammarsymbols.TokenType;
 
 /** Base class for entries in the Symbol Table */
@@ -9,6 +11,7 @@ public class SymbolTableEntry {
 	// Type of the entry
 	private TokenType type;
 	private boolean isNull = false;		// For null offsets
+	private boolean reserved = false; 
 	
 	/* Constructors */
 	public SymbolTableEntry(){
@@ -46,7 +49,6 @@ public class SymbolTableEntry {
 	public boolean isArray(){
 		return false;
 	}
-	
 	public boolean isConstant(){
 		return false;
 	}
@@ -54,16 +56,19 @@ public class SymbolTableEntry {
 	public boolean isFunction(){
 		return false;
 	}
-	
 	public boolean isProcedure(){
 		return false;
 	}
-	
 	public boolean isVariable(){
 		return false;
 	}
-	
 	public boolean isKeyword(){
+		return false;
+	}
+	public boolean isFunctionResult() {
+		return false;
+	}
+	public boolean isParameter(){
 		return false;
 	}
 	
@@ -75,11 +80,31 @@ public class SymbolTableEntry {
 		isNull = true;
 	}
 	
+	public boolean isReserved(){
+		return reserved;
+	}
+	
+	public void makeReserved(){
+		reserved = true;
+	}
+	
+	// Methods to be overridden
+	public void addParameter(ParmInfoEntry p){
+	}
+	public void setNumberOfParameters(int paramCount) {
+
+	}
+	public List<ParmInfoEntry> getParameterInfo(){
+		return null;
+	}
+	
 	public void print(){
 		System.out.println("Base Class - SymbolTable Entry:");
 		System.out.println("   Name    : " + this.getName());
 		System.out.println("   Type    : " + this.getType());
 		System.out.println();
 	}
+
+	
 
 }
