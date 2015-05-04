@@ -28,7 +28,7 @@ public class ConstantEntry extends SymbolTableEntry{
 		if(this.getType() == TokenType.REAL){
 			BigDecimal bd = new BigDecimal(this.getName());
 			realValue = bd.doubleValue();
-			this.setName(String.valueOf(realValue));
+			this.setName(bd.toPlainString());
 		}
 	}
 	

@@ -111,6 +111,7 @@ public class SemanticActions {
 		else{
 			entry.setAddress(0 - localMemory);
 			localMemory++;
+			entry.makeLocal();
 			localTable.insert(entry);
 		}
 		return entry;
@@ -219,7 +220,7 @@ public class SemanticActions {
 			quadruple[1] = "%" + stringValue;
 		}
 		// If the parameter to be pushed onto the stack is a global variable
-		else if(global){
+		else if(operand.isGlobal()){
 			quadruple[1] = "@_" + stringValue;
 		}
 		// If the parameter is a local variable
@@ -245,7 +246,7 @@ public class SemanticActions {
 		}
 		// Convert operand's value to string
 		String stringValue = String.valueOf(Math.abs(operand.getAddress()));
-		if(global || operand.isFunctionResult()){ // If global variable
+		if(operand.isGlobal() || operand.isFunctionResult()){ // If global variable
 			stringValue = "_" + stringValue;
 		}
 		else{ // If local variable
@@ -382,7 +383,7 @@ public class SemanticActions {
 				int lowerBound = lowConstant.getIntValue();
 				int memorySize = (upperBound - lowerBound)+1;
 				// For each ID on the semantic stack: 
-				while(!semanticStack.isEmpty() && semanticStack.peek() instanceof Identifier){
+				while(semanticStack.peek() instanceof Identifier){
 					Identifier id = (Identifier)semanticStack.pop();
 					// Create new array entry
 					ArrayEntry arrEntry = new ArrayEntry(id.getValue(), type, upperBound, lowerBound);
@@ -417,13 +418,14 @@ public class SemanticActions {
 										lexer.getCurrentLine(), id.getValue());
 							}catch(SemanticError e){ System.out.println(e); }
 						}
+						arrEntry.makeLocal();
 						localTable.insert(arrEntry);
 					}
 				}
 			}
 			else{	/* Simple Variable Declaration */
 				// For each ID on the semantic stack: 
-				while(!semanticStack.isEmpty() && semanticStack.peek() instanceof Identifier){
+				while(semanticStack.peek() instanceof Identifier){
 					Identifier id = (Identifier)semanticStack.pop();
 					// Create a new variable entry
 					VariableEntry varEntry = new VariableEntry(id.getValue(), type);
@@ -456,6 +458,7 @@ public class SemanticActions {
 										lexer.getCurrentLine(), id.getValue());
 							}catch(SemanticError e){ System.out.println(e); }
 						}
+						varEntry.makeLocal();
 						localTable.insert(varEntry);
 					}
 				}
@@ -467,7 +470,7 @@ public class SemanticActions {
 			semanticStack.push(token.getType());
 			break;
 		}
-		case 5: { // Procedure declaration
+		case 5: { // Generate alloc and PROCBEGIN statements for a procedure
 			insert = true;
 			SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
 			generate("PROCBEGIN", id);
@@ -501,7 +504,7 @@ public class SemanticActions {
 			generate("exit");
 			break;
 		}
-		case 11: { // Ends procedure or function. Frees storage
+		case 11: { // Ends procedure or function. Frees local memory
 			global = true;
 			// Delete local symbol table entries
 			localTable = null;
@@ -522,7 +525,7 @@ public class SemanticActions {
 		case 15: { // Function declaration
 			// Create new symboltable entry
 			FunctionEntry newFunction = new FunctionEntry(token.getValue());
-			// ******* To Fix: Set result?  With dummy integer type
+			// To Fix: Set result variable
 			VariableEntry result = create(token.getValue(), TokenType.INTEGER);
 			result.setFunctionResult();
 			newFunction.setResult(result);
@@ -535,17 +538,15 @@ public class SemanticActions {
 			break;
 		}
 		case 16: { // Tail of function declaration: set result variable
-			// ******* To fix: pop id? 
 			TokenType type = (TokenType)semanticStack.pop();
 			FunctionEntry id = (FunctionEntry) semanticStack.peek();
 			// Sets result variable's type
 			id.getResult().setType(type);
-//			globalTable.insert(id.getResult());
 			// Sets current function
 			currentFunction = id;
 			break;
 		}
-		case 17: { // Procedure declaration
+		case 17: { /* Procedure declaration: after the name is processed */
 			// Insert id in symbol table
 			ProcedureEntry newProcedure = new ProcedureEntry(token.getValue());
 			globalTable.insert(newProcedure);
@@ -556,27 +557,23 @@ public class SemanticActions {
 			localMemory = 0;
 			break;
 		}
-		case 19: {
-			// **** TO FIX: what is parm count?? 
-			// PARMCOUNT = 0
-//			parmCount = new ArrayDeque<Integer>();
+		case 19: { /* Procedure/Function declaration, before parameters are processed */
+			// Push a new counter for the number of parameters, initialized to 0
 			parmCount.push(0);
 			break;
 		}
-		case 20: {
-			// **** TO FIX: pop parmcount
+		case 20: { /* After parameter list for a procedure declaration. */
 			SymbolTableEntry procEntry = (SymbolTableEntry) semanticStack.peek();
-			// ***** PARMCOUNT.POP???
+			// Set the procedure's parameter count
 			int paramCount =  parmCount.pop();
 			procEntry.setNumberOfParameters(paramCount);
 			break;
 		}
-		case 21: {
+		case 21: { /* After a set of parameters declared of the same type (real, integer, array) */
 			// Procedure entry
 			SubroutineEntry subroutine = null;
 			// Get type
 			TokenType type = (TokenType) semanticStack.pop();
-			// **** TO FIX: GET ids
 			for(Object o: semanticStack){
 				if(o instanceof ProcedureEntry){
 					subroutine = (ProcedureEntry)o;
@@ -588,20 +585,27 @@ public class SemanticActions {
 				}
 			}
 			// Loop through all parameters on stack
+			Constant upToken = null;
+			int upperBound = 0;
+			Constant lowToken = null;
+			int lowerBound = 0;
 			while(semanticStack.peek() instanceof Token){
 					ParmInfoEntry parameterInfo;
 					// If the parameter is an array
 					if(isArray){
-						Constant upToken = (Constant) semanticStack.pop();
-						int upperBound = Integer.valueOf(upToken.getValue());
-						Constant lowToken = (Constant) semanticStack.pop();
-						int lowerBound = Integer.valueOf(lowToken.getValue());
+						if(upToken == null){
+							upToken = (Constant) semanticStack.pop();
+							upperBound = Integer.valueOf(upToken.getValue());
+							lowToken = (Constant) semanticStack.pop();
+							lowerBound = Integer.valueOf(lowToken.getValue());
+						}
 						Token id = (Token)semanticStack.pop();
 						// Create new arrayEntry
 						ArrayEntry parameter = 
 								new ArrayEntry(id.getValue(), type, upperBound, lowerBound);
 						parameter.setAddress(localMemory);
 						parameter.setParm();
+						parameter.makeLocal();
 						localTable.insert(parameter);
 						// Find out parameter type
 						parameterInfo = new ParmInfoEntry(type, true);
@@ -614,6 +618,7 @@ public class SemanticActions {
 						VariableEntry parameter = new VariableEntry(id.getValue(), type);
 						parameter.setAddress(localMemory);
 						parameter.setParm();
+						parameter.makeLocal();
 						localTable.insert(parameter);
 						// Create new parameter info entry
 						parameterInfo = new ParmInfoEntry(type, false);
@@ -628,53 +633,50 @@ public class SemanticActions {
 			isArray = false; // ARRAY/SIMPLE = SIMPLE
 			break;
 		}
-		case 22: {
+		case 22: { /* Set gotos for false IF statements */
 			EType eType = (EType)semanticStack.pop();
 			if(eType != EType.RELATIONAL){
 				throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
 			}
-			// ****** TO FIX
-			// Peek or pop at E.True
 			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
 			List<Integer> ETrue = (List<Integer>) semanticStack.peek();
 			semanticStack.push(EFalse);
 			BackPatch(ETrue, quads.getNextQuad());
 			break;
 		}
-		case 24: {
+		case 24: { /* Start of While loop! */
 			Integer beginLoop = quads.getNextQuad();
+			generate(";; Start of loop ;;");
 			semanticStack.push(beginLoop);
 			break;
 		}
-		case 25: {
+		case 25: { /* Evaluate the condition in the while loop */
 			EType eType = (EType)semanticStack.pop();
 			if(eType != EType.RELATIONAL){
 				throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
 			}
-			// ****** TO FIX
-			// Peek or pop at E.True
+			// Update the ETrue values, but keep both lists on the stack
 			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
 			List<Integer> ETrue = (List<Integer>) semanticStack.peek();
 			semanticStack.push(EFalse);
 			BackPatch(ETrue, quads.getNextQuad());
 			break;
 		}
-		case 26: {
-			Integer beginLoop = (Integer)semanticStack.pop();
-			// ******** TO FIX
-			// Pop off stack in reverse order?
+		case 26: { /* Generate Goto Statement for while loop */
+			// Pop off stack in reverse order
 			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
 			List<Integer> ETrue = (List<Integer>) semanticStack.pop();
+			Integer beginLoop = (Integer)semanticStack.pop();
+			generate("goto", String.valueOf(beginLoop));
 			BackPatch(EFalse, quads.getNextQuad());
+			generate(";; End of loop ;;");
 			break;
 		}
-		case 27: {
+		case 27: { /* Start of ELSE statement */
 			// Create new list of integers
 			List<Integer> SkipElse = makeList(quads.getNextQuad());
-			/// ******** TO FIX how to get to E.False??? 
 			List<Integer> EFalse = null;
-			for(Iterator itr = semanticStack.iterator();itr.hasNext();)  {
-		        Object obj = itr.next();
+			for(Object obj: semanticStack)  {
 		        if(obj instanceof List){
 		        	EFalse = (List<Integer>) obj;
 		        	break;
@@ -685,24 +687,23 @@ public class SemanticActions {
 			BackPatch(EFalse, quads.getNextQuad());
 			break;
 		}
-		case 28: {
-			// ******** TO FIX
-			// Pop off stack in reverse order?
+		case 28: { /* End of ELSE Statement */
+			// Pop off stack in reverse order
 			List<Integer> SkipElse = (List<Integer>) semanticStack.pop();
 			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
 			List<Integer> ETrue = (List<Integer>) semanticStack.pop();
+			// Set the goto if we skip the else statement
 			BackPatch(SkipElse, quads.getNextQuad());
 			break;
 		}
-		case 29: {
-			// ******** TO FIX
-			// Pop off stack in reverse order?
+		case 29: { /* If there is no ELSE statement */
+			// Pop off stack in reverse order
 			List<Integer> EFalse = (List<Integer>) semanticStack.pop();
 			List<Integer> ETrue = (List<Integer>) semanticStack.pop();
 			BackPatch(EFalse, quads.getNextQuad());
 			break;
 		}
-		case 30: {
+		case 30: { /* After Identifier is referenced in an expression */
 			SymbolTableEntry entry;
 			String idName = token.getValue();
 			// If local environment, check local table
@@ -737,7 +738,7 @@ public class SemanticActions {
 			semanticStack.push(EType.ARITHMETIC);
 			break;
 		}
-		case 31: {
+		case 31: { /* Evaluate ASSIGNMENT statements :=*/
 			EType eType = (EType)semanticStack.pop();
 			if(eType != EType.ARITHMETIC){
 				throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
@@ -745,7 +746,8 @@ public class SemanticActions {
 			SymbolTableEntry id2 = (SymbolTableEntry) semanticStack.pop();
 			SymbolTableEntry offset = (SymbolTableEntry) semanticStack.pop();
 			// ******* If EType is left on stack, pop it off
-			if(semanticStack.peek() instanceof EType) semanticStack.pop();
+//			if(semanticStack.peek() instanceof EType) semanticStack.pop();
+			EType eT = (EType)semanticStack.pop();
 			SymbolTableEntry id1 = (SymbolTableEntry) semanticStack.pop();
 			// Check types
 			int typeCheck = typeCheck(id1,id2);
@@ -774,7 +776,7 @@ public class SemanticActions {
 			}
 			break;
 		}
-		case 32: {
+		case 32: {  /* Look up a token in the symbol table */
 			// Look up current token (id) in the symbol table
 			SymbolTableEntry entry = null;
 			if(!global){
@@ -800,13 +802,8 @@ public class SemanticActions {
 			}
 			break;
 		}
-		case 33: {
+		case 33: { /* Evaluate array references */
 			EType eType = (EType)semanticStack.pop();
-			
-			// **** if(EType != Arithmetic, error)
-			// **** pop EType
-			// Look at id at top of stack
-			// POP??
 			SymbolTableEntry id = (SymbolTableEntry)semanticStack.peek();
 			// If it's not an integer variable, throw error
 			if(id.getType() != TokenType.INTEGER){
@@ -816,11 +813,10 @@ public class SemanticActions {
 			SymbolTableEntry temp1 = (SymbolTableEntry)semanticStack.pop();
 			// ARRAY_NAME is first array id on stack
 			ArrayEntry arrEntry = null;
-			Iterator<Object> iter = semanticStack.iterator();
-			while(iter.hasNext()){
-				Object obj = iter.next();
-				if(obj instanceof ArrayEntry){
-					arrEntry = (ArrayEntry)obj;
+			for(Object o: semanticStack){
+				if(o instanceof ArrayEntry){
+					arrEntry = (ArrayEntry)o;
+					break;
 				}
 			}
 //			// Check if array indices are in bounds
@@ -831,27 +827,23 @@ public class SemanticActions {
 //			generate("exit");
 			
 			VariableEntry temp = create("t", TokenType.INTEGER);
-			// Generate code
+			// Calculate the offset into the array
 			generate("sub", temp1, String.valueOf(arrEntry.getLowerBound()), temp);
 			// Push temp variable onto stack
 			semanticStack.push(temp);
 			break;
 		}
-		case 34: { // **** CHANGED
-			if(semanticStack.peek() instanceof SymbolTableEntry){
-				// Look at id at top of stack
-				SymbolTableEntry id = (SymbolTableEntry) semanticStack.peek();
-				// If id on stack is a function, call action 52
-				if(id.isFunction()){
-					Execute(SemanticAction.action52, token);
-				}
-				else{
-					SymbolTableEntry entry = new SymbolTableEntry("Null");
-					entry.makeNull();
-					semanticStack.push(entry);
+		case 34: { /* Either push a null offset or call the function handling subroutine */
+			SymbolTableEntry id = null;
+			for(Object o: semanticStack){
+				if(o instanceof SymbolTableEntry){
+					id = (SymbolTableEntry)o;
+					break;
 				}
 			}
-			// Else push null offset
+			if(id != null && id.isFunction()){
+				Execute(SemanticAction.action52, token);
+			}
 			else{
 				SymbolTableEntry entry = new SymbolTableEntry("Null");
 				entry.makeNull();
@@ -859,17 +851,14 @@ public class SemanticActions {
 			}
 			break;
 		}
-		case 35: { // Start of parameter declarations
+		case 35: { // Start of parameters in a procedure call
 			parmCount.push(0);
 			EType eType = (EType) semanticStack.pop();
-			SymbolTableEntry procedure = (SymbolTableEntry)semanticStack.peek();
 			nextParm.push(0);
-//			nextParm.addAll(procedure.getParameterInfo());
-//			nextParm = procedure.getParameterInfo();
 			semanticStack.push(eType);
 			break;
 		}
-		case 36: {
+		case 36: { /* Procedure or function call with no parameters */
 			// POP ETYPE
 			semanticStack.pop();
 			ProcedureEntry proc = (ProcedureEntry)semanticStack.pop();
@@ -878,7 +867,7 @@ public class SemanticActions {
 			}
 			break;
 		}
-		case 37: {
+		case 37: { /* Parameter type and count checking for procedure/function call */
 			EType eType = (EType) semanticStack.pop();
 			if(eType != EType.ARITHMETIC){
 				throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
@@ -936,7 +925,7 @@ public class SemanticActions {
 			}
 			break;
 		}
-		case 38: {
+		case 38: { /* After a RELOP is processed */
 			EType eType = (EType)semanticStack.pop();
 			// If ETYPE != ARITHMETIC, throw an error message
 			if(eType != EType.ARITHMETIC){
@@ -951,7 +940,7 @@ public class SemanticActions {
 			semanticStack.push(token);
 			break;
 		}
-		case 39: {
+		case 39: { /* Evaluate the condition of a relop */
 			EType eType = (EType)semanticStack.pop();
 			// If ETYPE != ARITHMETIC, throw an error message
 			if(eType != EType.ARITHMETIC){
@@ -997,11 +986,11 @@ public class SemanticActions {
 			semanticStack.push(EType.RELATIONAL);
 			break;
 		}
-		case 40: { // PUSH SIGN
+		case 40: { /* Push SIGN */
 			semanticStack.push(token);
 			break;
 		}
-		case 41: {
+		case 41: { /* Make NEGATIVE VALUES (Unary minus) */
 			EType eType = (EType)semanticStack.pop();
 			if(eType != EType.ARITHMETIC){
 				throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
@@ -1029,8 +1018,8 @@ public class SemanticActions {
 				if(eType != EType.RELATIONAL){
 					throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
 				}
-				// or ETrue instance variable
-				List<Integer> EFalse = (List<Integer>)semanticStack.pop();
+				// // Backpatch for false case of the OR statement
+				List<Integer> EFalse = (List<Integer>)semanticStack.peek();
 				BackPatch(EFalse, quads.getNextQuad());
 			}
 			else{
@@ -1043,15 +1032,15 @@ public class SemanticActions {
 			semanticStack.push(token);
 			break;
 		}
-		case 43: {
+		case 43: { /* Evaluate ADDOPS: +, -, OR */
 			// Pop expression type off
 			EType eType = (EType) semanticStack.pop();
 			if(eType == EType.RELATIONAL){ // If EType is relational
-				List<Integer> ETrue1 = (List<Integer>) semanticStack.pop();
-				List<Integer> EFalse1 = (List<Integer>) semanticStack.pop();
+				List<Integer> EFalse2 = (List<Integer>) semanticStack.pop();
+				List<Integer> ETrue2 = (List<Integer>) semanticStack.pop();
 				Operator operator = (Operator) semanticStack.pop();
-				List<Integer> ETrue2 = (List<Integer>)semanticStack.pop();
-				List<Integer> EFalse2 = (List<Integer>)semanticStack.pop();
+				List<Integer> EFalse1 = (List<Integer>)semanticStack.pop();
+				List<Integer> ETrue1 = (List<Integer>)semanticStack.pop();
 				//Push various things onto stack
 				if(operator.getValue().equals("OR")){
 					List<Integer> newETrue = merge(ETrue1, ETrue2);
@@ -1111,26 +1100,23 @@ public class SemanticActions {
 			}
 			break;
 		}
-		case 44: {
+		case 44: { /* Fill in goto values for AND statements */
 			EType eType = (EType)semanticStack.pop();
 			if(eType == EType.RELATIONAL){
 				// If the operator is AND, backpatch
 				if(token.getValue().equals("AND")){
+					List<Integer> EFalse = (List<Integer>)semanticStack.pop();
 					List<Integer> ETrue = (List<Integer>)semanticStack.peek();
 					BackPatch(ETrue, quads.getNextQuad());
+					semanticStack.push(EFalse);
 				}
 			}
 			semanticStack.push(token);
 			break;
 		}
-		case 45: {
+		case 45: { /* Evaluate MULOPS: *, /, DIV, MOD, AND */
 			EType eType = (EType)semanticStack.pop();
-			// If operator == AND
-//			if(opType.equals("AND")){
 			if(eType == EType.RELATIONAL){
-//				if(eType != EType.RELATIONAL) {
-//					throw SemanticError.RelationalTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
-//				}
 				// Pop lists off in reverse order
 				List<Integer> EFalse2 = (List<Integer>) semanticStack.pop();
 				List<Integer> ETrue2 = (List<Integer>) semanticStack.pop();
@@ -1145,8 +1131,7 @@ public class SemanticActions {
 					semanticStack.push(EType.RELATIONAL);
 				}
 			}
-//			}
-			else{
+			else{ // Arithmetic expression
 				// Pop things off the stack: of the form op1 operator op2
 				//Pop second operand
 				SymbolTableEntry id2 = (SymbolTableEntry) semanticStack.pop();
@@ -1154,7 +1139,7 @@ public class SemanticActions {
 				Operator op = (Operator) semanticStack.pop();
 				// Pop first operand
 				SymbolTableEntry id1 = (SymbolTableEntry) semanticStack.pop();
-				String opType = op.getValue();					// String representation of operation
+				String opType = op.getValue();		// String representation of operation
 				String tviOpcode = op.getTVICode(); // TVI representation of operation
 				if(eType != EType.ARITHMETIC) {
 					throw SemanticError.ArithmeticTypeError(lexer.getLineNumber(), lexer.getCurrentLine());
@@ -1168,12 +1153,14 @@ public class SemanticActions {
 				// Branched execution depending on the types of the operands
 				if(types == 0){ // Both operands are ints
 					if(opType.equals("MOD")){ // Modulus tvi code
-//						generate("print", "\" " + id1.getName() + " MOD " + id2.getName() + " \"");
+						generate("print", "\" " + id1.getName() + " MOD " + id2.getName() + " \"");
+						generate("newl");
+						generate(";; " + id1.getName() + " MOD " + id2.getName() + " ;;");
 						VariableEntry temp1 = create("t", TokenType.INTEGER);
 						generate("move", id1, temp1);
 						VariableEntry temp2 = create("t", TokenType.INTEGER);
 						generate("move", temp1, temp2);
-						generate("sub", temp1, id2, temp2);
+						generate("sub", temp2, id2, temp1);
 						generate("bge", temp1, id2, String.valueOf(quads.getNextQuad()-2)); // ******* //
 						semanticStack.push(temp1);
 					}
@@ -1261,7 +1248,7 @@ public class SemanticActions {
 			}
 			break;
 		}
-		case 46: {
+		case 46: { /* Variable references: look up variable in the symbol table */
 			// If token is an identifier, lookup in symbol table and push its entry onto the stack
 			if(token instanceof Identifier){
 				SymbolTableEntry entry;
@@ -1316,11 +1303,11 @@ public class SemanticActions {
 			semanticStack.push(EType.ARITHMETIC);
 			break;
 		}
-		case 47: {
+		case 47: { /* Evaluation of NOT */
 			EType eType = (EType)semanticStack.pop();
-			List<Integer> oldETrue = (List<Integer>) semanticStack.pop();
 			List<Integer> oldEFalse = (List<Integer>) semanticStack.pop();
-			// Switch ETrue and EFalse, for bne statements
+			List<Integer> oldETrue = (List<Integer>) semanticStack.pop();
+			// Switch ETrue and EFalse, for not statements
 			List<Integer> newETrue = oldEFalse;
 			List<Integer> newEFalse = oldETrue;
 			// Push new entries onto stack
@@ -1329,7 +1316,7 @@ public class SemanticActions {
 			semanticStack.push(EType.RELATIONAL);
 			break;
 		}
-		case 48: {
+		case 48: { /* Load a value from an offset into an array */ 
 			// Pop offset
 			SymbolTableEntry offset = (SymbolTableEntry) semanticStack.pop();
 			if(!offset.isNull()){
@@ -1369,18 +1356,11 @@ public class SemanticActions {
 //			nextParm = ((FunctionEntry)id).getParameterInfo();
 			break;
 		}
-		case 50: { // After function call parameters
+		case 50: { // After function call: parameters are now on stack
 //			EType eType = (EType) semanticStack.pop();
-			// FOR EACH PARAMETER ON STACK:
-			// **** TO FIX: VariableEntries or Tokens??
-			Stack<SymbolTableEntry> tempStack = new Stack<SymbolTableEntry>();
+			// Push each parameter on the semantic stack onto the parameter stack
 			while(semanticStack.peek() instanceof SymbolTableEntry){
-				SymbolTableEntry id = (SymbolTableEntry) semanticStack.pop();
-				tempStack.push(id);
-			}
-			// **** Do from bottom to top: reverse order
-			while(!tempStack.empty()){
-				SymbolTableEntry id = tempStack.pop();
+				SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
 				generateParam("param", id);
 				localMemory++;
 			}
@@ -1389,19 +1369,17 @@ public class SemanticActions {
 			if(parmCount.peek() != function.getNumberOfParameters()){
 				throw SemanticError.ParameterMiscount(lexer.getLineNumber(), lexer.getCurrentLine(), function.getName());
 			}
+			// Generate call statement
 			generate("call", function, String.valueOf(parmCount.pop()));
-			// ***** TO FIX: POP nexparm.top
-			// ***** function.getResult.getType()??
+			// Move the result variable's contents into a temporary variable
 			VariableEntry temp = create("t", function.getResult().getType());
 			generate("move", function.getResult(), temp);
 			semanticStack.push(temp);
 			semanticStack.push(EType.ARITHMETIC);
 			nextParm.pop();
-			System.out.println("PRM" + parmCount.toString());
-			System.out.println("NXT" + nextParm.toString());
 			break;
 		}
-		case 51: { // After Procedure parameter declarations
+		case 51: { // After Procedure call: all parameters are now on stack
 //			EType ET = (EType)semanticStack.pop();
 			ProcedureEntry procedure = null;
 			for(Object o: semanticStack){
@@ -1410,40 +1388,34 @@ public class SemanticActions {
 			}
 			if(procedure.getName().equals("READ")){
 				Execute(SemanticAction.action51Read, token);
+				break;
 			}
 			else if(procedure.getName().equals("WRITE")){
 				Execute(SemanticAction.action51Write, token);
+				break;
 			}
 			else{
 				if(parmCount.peek() != procedure.getNumberOfParameters()){
 					throw SemanticError.ParameterMiscount(lexer.getLineNumber(), lexer.getCurrentLine(), procedure.getName());
 				}
-				// FOR EACH PARAMETER ON STACK:
-				Stack<SymbolTableEntry> tempStack = new Stack<SymbolTableEntry>();
+				// Push each parameter onto the parameter stack.
 				while(semanticStack.peek() instanceof SymbolTableEntry){
 					SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
-					tempStack.push(id);
-				}
-				// **** Do from bottom to top: reverse order
-				while(!tempStack.empty()){
-					SymbolTableEntry id = tempStack.pop();
 					generateParam("param", id);
 					localMemory++;
 				}
+				// Generate call statement
 				generate("call", procedure, String.valueOf(parmCount.pop()));
 				/* Pop EType and Procedure entry off the stack */
 				EType et = (EType)semanticStack.pop();
 				ProcedureEntry pc = (ProcedureEntry)semanticStack.pop();
-				// ****** CHECK PARMCOUNT STACK semanticStack.pop();
-				System.out.println("PRM" + parmCount.toString());
-				System.out.println("NXT" + nextParm.toString());
 				nextParm.pop();
 			}
 			break;
 		}
-		case 52: {
+		case 52: { /* Function call with no parameters */
 			EType eType = (EType) semanticStack.pop();
-			SymbolTableEntry id = (SymbolTableEntry)semanticStack.peek();
+			SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
 			if(!id.isFunction()){
 				throw SemanticError.NonFunction(lexer.getLineNumber(), lexer.getCurrentLine(), id.getName());
 			}
@@ -1454,14 +1426,18 @@ public class SemanticActions {
 			}
 			generate("call", functionID, "0");
 			// ***** TO FIX: function.getResult.getType()??
-			VariableEntry temp = create("t", functionID.getType());
+			VariableEntry temp = create("t", functionID.getResult().getType());
 			generate("move", functionID.getResult(), temp);
 			// Push entries onto stack
 			semanticStack.push(temp);
 			semanticStack.push(EType.ARITHMETIC);
+			// ***** Push null offset, assuming we don't have an array
+			SymbolTableEntry entry = new SymbolTableEntry("Null");
+			entry.makeNull();
+			semanticStack.push(entry);
 			break;
 		}
-		case 53: {
+		case 53: { /* Push result of a function */
 			EType eType = (EType) semanticStack.pop();
 			SymbolTableEntry id = (SymbolTableEntry)semanticStack.peek();
 			if(id.isFunction()){
@@ -1473,14 +1449,14 @@ public class SemanticActions {
 				FunctionEntry func = (FunctionEntry)semanticStack.pop();
 				// Push id.result
 				semanticStack.push(func.getResult());
-//				semanticStack.push(EType.ARITHMETIC);
+				semanticStack.push(EType.ARITHMETIC);
 			}
 			else{
 				semanticStack.push(EType.ARITHMETIC);
 			}
 			break;
 		}
-		case 54: {
+		case 54: { /* Check if symbol table entry is a procedure */
 			SymbolTableEntry id = globalTable.lookup(token.getValue());
 			// If ID is not a procedure, throw error
 			if(id == null || !id.isProcedure()){
@@ -1489,14 +1465,13 @@ public class SemanticActions {
 			}
 			break;
 		}
-		case 55: {
-			// BackPatch(globalAlloc, globalMemory)
+		case 55: { /* Allocate and free global memory */
 			quads.setField(globalAlloc, 1, Integer.toString(globalMemory));
 			generate("free", Integer.toString(globalMemory));
 			generate("PROCEND");
 			break;
 		}
-		case 56: {
+		case 56: { /* Procedure call for main */
 			// GEN(PROCBEGIN main)
 			generate("PROCBEGIN", globalTable.lookup("MAIN"));
 			// GLOBAL_STORE = NEXTQUAD
@@ -1506,29 +1481,27 @@ public class SemanticActions {
 			break;
 		}
 		case 100: { /* PROCEDURE CALL FOR WRITE */
-//			SymbolTableEntry write = (SymbolTableEntry) semanticStack.pop();
-			// FOR EACH PARAMETER ON STACK:
-			// **** TO FIX: VariableEntries or Tokens??
+			// Push the parameters onto the call stack, in reverse order
 			Stack<SymbolTableEntry> tempStack = new Stack<SymbolTableEntry>();
 			while(semanticStack.peek() instanceof SymbolTableEntry){
 				SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
 				tempStack.push(id);
 			}
-			// **** Do from bottom to top: reverse order
-			// generate print statements
+			// Generate read statements for each parameters
 			while(!tempStack.empty()){
 				SymbolTableEntry id = tempStack.pop();
 				generate("print", "\"" + id.getName() + " = \"");
-				// foutp for real (floats)
+				// finp for real (floats)
 				if(id.getType() == TokenType.REAL){
 					generate("foutp", id);
 				} 
-				// outp for integers
+				// inp for integers
 				else{
 					generate("outp", id);
 				}
 				generate("newl");
 			}
+			// Pop off parmcount, and nexparm pointers
 			parmCount.pop();
 			nextParm.pop();
 			EType ET = (EType)semanticStack.pop();
@@ -1536,13 +1509,15 @@ public class SemanticActions {
 			break;
 		}
 		case 101: { /* PROCEDURE CALL FOR READ */
-			// FOR EACH PARAMETER ON STACK: Push onto temp stack, and then 
+			/* FOR EACH PARAMETER ON STACK: read
+			 * Must go from bottom of stack to top of stack, since we are not pushing 
+			 * arguments onto the parameter stack */
 			Stack<SymbolTableEntry> tempStack = new Stack<SymbolTableEntry>();
 			while(semanticStack.peek() instanceof SymbolTableEntry){
 				SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
 				tempStack.push(id);
 			}
-			// Generate read statements for each parameters
+			// Generate read statements for each parameter, in reverse order of the stack
 			while(!tempStack.empty()){
 				SymbolTableEntry id = tempStack.pop();
 				generate("print", "\"" + id.getName() + " = \"");
@@ -1559,6 +1534,7 @@ public class SemanticActions {
 			nextParm.pop();
 			EType ET = (EType)semanticStack.pop();
 			ProcedureEntry read = (ProcedureEntry) semanticStack.pop();
+			break;
 		}
 		default: {
 			// Nothing!
@@ -1623,42 +1599,4 @@ public class SemanticActions {
 	public Quadruples getQuads(){
 		return quads;
 	}
-	
-//	/** Converts an addOp's integer representation to a TVI code 
-//	 * Only returns valid TVI codes for 1 (add) and 2 (sub)*/
-//	public String convertAddOp(int i){
-//		if(i == 1) return "add";
-//		else if(i == 2) return "sub";
-//		else if(i == 3) return "or";
-//		else return "error";
-//	}
-//	
-//	/** Converts a MulOp's integer representation to a TVI code 
-//	 * Only returns valid TVI codes for 1 (mul) and 2 (sub)*/
-//	public String convertMulop(int i){
-//		if(i == 1) return "mul";
-//		else if(i == 2) return "div";
-//		else return "error";
-//	}
-//	
-//	/** Converts a RelOp's integer representation to a TVI code 
-//	 * Only returns valid TVI codes for 1 (mul) and 2 (sub)*/
-//	public String convertRelop(int i){
-//		// =
-//		if(i == 1) return "bge";
-//		// <>
-//		else if(i == 2) return "bne";
-//		// <
-//		else if(i == 3) return "blt";
-//		// >
-//		else if(i == 4) return "bgt";
-//		// <=
-//		else if(i == 5) return "ble";
-//		// >=
-//		else if(i == 6) return "bge";
-//		else return "error";
-//	}
-
-
-
 }

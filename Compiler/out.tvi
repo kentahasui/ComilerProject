@@ -1,30 +1,46 @@
 CODE
  1: call main, 0 
  2: exit 
- 3: PROCBEGIN one 
- 4: alloc 7 
- 5: add ^%1, ^%0, %4 
- 6: move %4, %3 
- 7: sub %3, 1, %5 
- 8: move 2.345, %6 
- 9: stor %6, %5, ^%2 
-10: free 7 
-11: PROCEND 
-12: PROCBEGIN main 
-13: alloc 12 
-14: move 1, _7 
-15: move _7, _1 
-16: move 2, _8 
-17: move _8, _0 
-18: param @_1 
-19: param @_0 
-20: param @_2 
-21: call one, 3 
-22: add _1, _0, _9 
-23: sub _9, 1, _10 
-24: load _2, _10, _11 
-25: print "$$t7 = " 
-26: foutp _11 
-27: newl 
-28: free 12 
-29: PROCEND 
+ 3: PROCBEGIN gcd 
+ 4: alloc 9 
+ 5: ;; Conditional execution: compare B and 0 
+ 6: move 0, %3 
+ 7: beq ^%0, %3, 9 
+ 8: goto 12 
+ 9: ltof ^%1, %4 
+10: move %4, _2 
+11: goto 26 
+12: move ^%1, %2 
+13: ;; Start of loop ;; 
+14: ;; Conditional execution: compare X and B 
+15: bge %2, ^%0, 17 
+16: goto 20 
+17: sub %2, ^%0, %5 
+18: move %5, %2 
+19: goto 13 
+20: ;; End of loop ;; 
+21: param @%2 
+22: param %0 
+23: call gcd, 2 
+24: move _2, %8 
+25: move %8, _2 
+26: free 9 
+27: PROCEND 
+28: PROCBEGIN main 
+29: alloc 4 
+30: print "X = " 
+31: inp _1 
+32: print "Y = " 
+33: inp _0 
+34: ;; Conditional execution: compare X and Y 
+35: bgt _1, _0, 37 
+36: goto 44 
+37: param @_0 
+38: param @_1 
+39: call gcd, 2 
+40: move _2, _3 
+41: print "$$t5 = " 
+42: foutp _3 
+43: newl 
+44: free 4 
+45: PROCEND 

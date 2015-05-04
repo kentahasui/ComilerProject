@@ -14,5 +14,6 @@ begin
         k := Sum(i,j) * 2;
         i := Sum(Sum(1, 2), 2);
         write(i);
+        write(i, k);
         write(k)
 end.

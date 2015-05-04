@@ -1,7 +1,8 @@
+/drivers/
+/errors/
+/grammarsymbols/
+/junittests/
+/lex/
+/parser/
 /semanticActions/
 /symboltable/
-/errors/
-/junittests/
-/drivers/
-/parser/
-/lex/

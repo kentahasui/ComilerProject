@@ -12,6 +12,7 @@ public class SymbolTableEntry {
 	private TokenType type;
 	private boolean isNull = false;		// For null offsets
 	private boolean reserved = false; 
+	private boolean isGlobal = true;
 	
 	/* Constructors */
 	public SymbolTableEntry(){
@@ -86,6 +87,17 @@ public class SymbolTableEntry {
 	
 	public void makeReserved(){
 		reserved = true;
+	}
+	
+	public boolean isGlobal(){
+		return isGlobal;
+	}
+	
+	public void makeGlobal(){
+		isGlobal = true;
+	}
+	public void makeLocal(){
+		isGlobal = false;
 	}
 	
 	// Methods to be overridden

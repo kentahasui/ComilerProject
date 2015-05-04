@@ -5,7 +5,7 @@ Var
 procedure this (why, note : real);
 begin
    if ((why = note - 1608) or not (note = why))
-   then if (x - i = 0)
+   then if (x - i = 4)
       then begin
          x := why / note
          end

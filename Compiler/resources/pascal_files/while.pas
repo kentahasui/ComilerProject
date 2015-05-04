@@ -38,7 +38,7 @@ end
 
 procedure testb(a,b:integer; c,d,e,f : real );
 begin 
-	write("write a: "a);
+	write(a);
 	write(b);
 	write(c);
 	write(d);
@@ -54,10 +54,10 @@ j := 1;
 k := 2;
 l := 3;
 
-write("h = -1: "h);
+write(h);
 
 h := h * (-1) + 3;
-write("h = 4: " h);
+write(h);
 
 s := -1.1;
 t := 1.1;
@@ -86,8 +86,8 @@ n[l] := x;
 
 while j < 6 do 
 	begin
-	 write("j: "j);
-	 write("m[j]: " m[j]);
+	 write(j);
+	 write(m[j]);
 	 j := j +1
 		
 	end;
@@ -95,22 +95,22 @@ while j < 6 do
 
 while i <= h do
 	begin
-		write("i: " i);
-		write("n[i]: " n[i]);
+		write(i);
+		write(n[i]);
 		i := i + 1
 	end;
 	
-write("testi(4,1): "testi(4,1));
+write(testi(4,1));
 
 x := 5 * (1 + 2 + 3.1 - 4.3 + 0.2) / 4;
 l := 5*7;
 v := k * v;
-write("x := 5 * (1 + 2 + 3.1 - 4.3 + 0.2) / 4; "x);
-write("l := 5*7; "l);
-write("v := k * v; "v);
+write(x);
+write(l);
+write(v);
 
 i := m[3] + 4;
-write("i := m[3] + 4; " i);
+write(i);
 
 
 m[1] := 1;

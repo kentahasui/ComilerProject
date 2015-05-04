@@ -8,7 +8,5 @@ public enum EType {
 	private int n;
 	private EType(int i) { n = i; }
 	public int getIndex() { return n; }
-	
-	
 
 }

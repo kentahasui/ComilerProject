@@ -6,7 +6,7 @@ function gcd (a, b: integer) : result real;
    var x : integer;
 begin
    if b= 0 then gcd := a
-   else begin end end;
+   else begin
      x := a;
      while (x >= b) do
       begin

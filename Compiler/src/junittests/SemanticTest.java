@@ -84,11 +84,27 @@ public class SemanticTest {
 		System.out.println("\nProc test");
 		driver = new ParseDriver("resources/pascal_files/proc.pas");
 		driver.run();
-		System.out.println();
 		System.out.println("\nFunc test");
 		driver = new ParseDriver("resources/pascal_files/func.pas");
 		driver.run();
-		
+		System.out.println("\nFib test");
+		driver = new ParseDriver("resources/pascal_files/fib.pas");
+		driver.run();
+		System.out.println("\nUnary Minus test");
+		driver = new ParseDriver("resources/pascal_files/unaryminus.pas");
+		driver.run();
+		System.out.println("\nNo Parameter test");
+		driver = new ParseDriver("resources/pascal_files/noparm.pas");
+		driver.run();
+		System.out.println("\nRecursion test");
+		driver = new ParseDriver("resources/pascal_files/recursion.pas");
+		driver.run();
+		System.out.println("\nRel test");
+		driver = new ParseDriver("resources/pascal_files/rel.pas");
+		driver.run();
+		System.out.println("\nWhile test");
+		driver = new ParseDriver("resources/pascal_files/while.pas");
+		driver.run();
 	}
 	
 	/** Tests the generate function */
