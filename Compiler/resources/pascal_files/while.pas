@@ -27,8 +27,6 @@ end
 
 function testc(a,b: array[1..5] of integer): result integer;
 begin
-	
-	
 	write(a[1] + b[1]);
 	write(a[2] + b[2]);
 	write(a[3] + b[3]);

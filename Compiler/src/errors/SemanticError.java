@@ -20,11 +20,11 @@ public class SemanticError extends CompilerError{
 		return ">>> ERROR AT LINE " + lineNumber + ": " + lineContent + "\n>>> ";
 	}
 	
-	/** Semantic Error thrown when an array is declared without subscripts */
-	public static SemanticError MissingSubscripts(int lineNumber, String lineContent){
+	/** Semantic Error thrown when an array is referenced without subscripts */
+	public static SemanticError MissingSubscripts(int lineNumber, String lineContent, String varName){
 		return new SemanticError(Type.ARRAY_WITHOUT_SUBSCRIPTS,
 				errorStart(lineNumber, lineContent) +
-				"Missing subscripts for this array declaration");
+				"Missing subscripts for this array: " + varName);
 	}
 	
 	/** Semantic Error thrown when a simple variable is indexed with subscripts 
@@ -40,7 +40,7 @@ public class SemanticError extends CompilerError{
 	public static SemanticError SimpleSubscripts(int lineNumber, String lineContent, String varName){
 		return new SemanticError(Type.VARIABLE_WITH_SUBSCRIPTS,
 				errorStart(lineNumber, lineContent) +
-				"Simple variables cannot use subscripts: " + varName);
+				"Subscripts cannot be used for non-array variables: " + varName);
 	}
 	
 	/** Semantic Error thrown when an undeclared variable is referenced 
@@ -56,7 +56,7 @@ public class SemanticError extends CompilerError{
 	public static SemanticError UndeclaredVariable(int lineNumber, String lineContent, String variable){
 		return new SemanticError(Type.UNDECLARED_VARIABLE,
 				errorStart(lineNumber, lineContent) +
-				"Undeclared variable " + variable);
+				"Undeclared variable: " + variable);
 	}
 	
 	/** Semantic Error thrown when two variables with the same name are declared in the same scope */
@@ -106,7 +106,7 @@ public class SemanticError extends CompilerError{
 	public static SemanticError IntegerExpected(int lineNumber, String lineContent, String varName){
 		return new SemanticError(Type.INTEGER_EXPECTED,
 				errorStart(lineNumber, lineContent) +
-				"Variable " + varName + " must be an integer");
+				"Subscripts for an array must be an integer. It cannot be a real number: " + varName);
 	}
 	
 	/** Semantic Error thrown when an arithmetic type was expected but a relational type was encountered */
@@ -154,7 +154,7 @@ public class SemanticError extends CompilerError{
 		return new SemanticError(Type.UNMATCHED_PARAMETER_TYPES, 
 				errorStart(lineNumber, lineContent) +
 				"The actual parameter types for " + ProcName + " do not match its declaration." 
-				+ "\n>>> For parameter" + IDName + ", " + expected.toString() + " was expected but "
+				+ "\n>>> For parameter " + IDName + ", " + expected.toString() + " was expected but "
 				+ actual.toString() + "  was encountered");
 	}
 	

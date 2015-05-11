@@ -1,6 +1,8 @@
 package parser;
 import lex.*;
+
 import java.io.*;
+
 import semanticActions.SemanticActions;
 import token.*;
 import errors.*;
@@ -131,6 +133,7 @@ public class Parser {
 			e.printStackTrace();
 		}
 		semanticActions.printGeneratedCode();
+		System.out.flush();
 	}
 	
 	/** Method to print out the contents of the stack. 

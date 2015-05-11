@@ -8,7 +8,7 @@ public class VariableEntry extends SymbolTableEntry {
 /***********************************************************
   These variables are used later */
   
-	boolean parm = false, functionResult = false, reserved = false, error = false;
+	boolean parm = false, functionResult = false, reserved = false;
 /***********************************************************/
 
 	public int getAddress() {
@@ -75,15 +75,7 @@ The methods below are not used until later
 	public void makeReserved() {
 		this.reserved = true;
 	} 
-	
-	/** Returns flag to indicate this variable was entered into table as result of error condition */
-	public boolean isError(){
-		return error;
-	}
-	/** Sets the error flag */
-	public void makeError(){
-		error = true;
-	}
+
 /***************************************************************/
 
 	

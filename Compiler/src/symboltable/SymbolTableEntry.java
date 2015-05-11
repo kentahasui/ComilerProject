@@ -11,8 +11,9 @@ public class SymbolTableEntry {
 	// Type of the entry
 	private TokenType type;
 	private boolean isNull = false;		// For null offsets
-	private boolean reserved = false; 
-	private boolean isGlobal = true;
+	private boolean reserved = false;   // For reserved names
+	private boolean isGlobal = true;	// To indicate global/local variables
+	private boolean isError = false;	// To indicate whether a variable is part of an error
 	
 	/* Constructors */
 	public SymbolTableEntry(){
@@ -92,12 +93,19 @@ public class SymbolTableEntry {
 	public boolean isGlobal(){
 		return isGlobal;
 	}
-	
 	public void makeGlobal(){
 		isGlobal = true;
 	}
 	public void makeLocal(){
 		isGlobal = false;
+	}
+	/** Returns flag to indicate whether an entry was placed as a result of an error */
+	public boolean isError(){
+		return isError;
+	}
+	/** Indicates that an entry is placed as a result of an error */
+	public void makeError(){
+		isError = true;
 	}
 	
 	// Methods to be overridden

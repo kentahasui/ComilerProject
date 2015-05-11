@@ -107,6 +107,31 @@ public class SemanticTest {
 		driver.run();
 	}
 	
+	@Test
+	public void ErrorTest(){
+		System.out.println("Undeclared Variable Test");
+		ParseDriver driver = new ParseDriver("resources/pascal_testError/undeclared.pas");
+		driver.run();
+		System.out.println("\nSimple variable with subscripts Test");
+		driver = new ParseDriver("resources/pascal_testError/simplesubscript.pas");
+		driver.run();
+		System.out.println("\nArray variable without subscripts Test");
+		driver = new ParseDriver("resources/pascal_testError/missingsubscript.pas");
+		driver.run();
+		System.out.println("\nSecond Array Test");
+		driver = new ParseDriver("resources/pascal_testError/missingsubscript2.pas");
+		driver.run();
+		System.out.println("\nMultiply Declared Variables");
+		driver = new ParseDriver("resources/pascal_testError/multiplevariables.pas");
+		driver.run();
+		System.out.println("\nMod Error");
+		driver = new ParseDriver("resources/pascal_testError/moderror.pas");
+		driver.run();
+		System.out.println("\nToo many parameters");
+		driver = new ParseDriver("resources/pascal_testError/parametercount.pas");
+		driver.run();
+	}
+	
 	/** Tests the generate function */
 	@Test
 	public void generateTest(){

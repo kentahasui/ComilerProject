@@ -44,6 +44,5 @@ public class ParseDriver {
 		}
 		// Parse the file
 		pd.run();
-		System.out.flush();
 	}
 }

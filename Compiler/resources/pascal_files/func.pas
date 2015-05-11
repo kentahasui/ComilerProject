@@ -15,5 +15,6 @@ begin
         i := Sum(Sum(1, 2), 2);
         write(i);
         write(i, k);
+        write(Sum(5, 6));
         write(k)
 end.
