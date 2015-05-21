@@ -49,6 +49,7 @@ public class Parser {
 	 * or if there is a lexical error in the input file. 
 	 */
 	public void parse() throws CompilerError{
+		System.setOut(System.out);
 		currentToken = lexer.GetNextToken();	// Get first token from input
 		// Clear stack at the start
 		stack.clear();
@@ -63,7 +64,6 @@ public class Parser {
 			if(predicted.isToken()){
 				// Try to match the current token with the non-terminal: 
 				if(predicted == currentToken.getType()){
-//					System.out.println(currentToken);
 					// If they match, we get the next token from the input
 					prevToken = currentToken;
 					currentToken = lexer.GetNextToken();
@@ -124,8 +124,7 @@ public class Parser {
 				throw ParseError.UnknownSymbolType(lexer.getLineNumber(), lexer.getCurrentLine(), predicted);
 			}
 		} // End While Loop
-//		semanticActions.dumpGlobalTable();
-//		semanticActions.dumpConstantTable();
+		System.out.println("Compilation successful");
 		semanticActions.printGeneratedCode();
 		try {
 			System.setOut(new PrintStream(new BufferedOutputStream(new FileOutputStream("out.tvi")), true));

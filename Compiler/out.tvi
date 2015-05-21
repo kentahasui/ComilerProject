@@ -1,687 +1,106 @@
 CODE
  1: call main, 0 
  2: exit 
- 3: PROCBEGIN testi 
- 4: alloc 5 
- 5: ;; Conditional execution: compare A and B 
- 6: blt ^%1, ^%0, 8 
- 7: goto 10 
- 8: move ^%0, _25 
- 9: goto 17 
-10: move 1, %3 
-11: add ^%0, %3, %2 
-12: param @%2 
-13: param %1 
-14: call testi, 2 
-15: move _25, %4 
-16: move %4, _25 
-17: free 5 
-18: PROCEND 
-19: PROCBEGIN sum 
-20: alloc 3 
-21: fadd ^%1, ^%0, %2 
-22: move %2, _26 
-23: free 3 
-24: PROCEND 
-25: PROCBEGIN externalsum 
-26: alloc 1 
-27: add _3, _2, %0 
-28: move %0, _27 
-29: free 1 
-30: PROCEND 
-31: PROCBEGIN testc 
-32: alloc 36 
-33: move 1, %2 
-34: blt %2, 1, 36 
-35: move 1, %3 
-36: bgt %3, 5, 37 
-37: goto 40 
-38: print "Array index out of bounds" 
-39: exit 
-40: move 1, %5 
-41: sub %5, 1, %4 
-42: load ^%1, %4, %6 
-43: move 1, %7 
-44: blt %7, 1, 46 
-45: move 1, %8 
-46: bgt %8, 5, 47 
-47: goto 50 
-48: print "Array index out of bounds" 
-49: exit 
-50: move 1, %10 
-51: sub %10, 1, %9 
-52: load ^%0, %9, %11 
-53: add %6, %11, %12 
-54: print "$$t19 = " 
-55: outp %12 
+ 3: PROCBEGIN main 
+ 4: alloc 26 
+ 5: move 0, _2 
+ 6: move _2, _1 
+ 7: ;; Conditional execution: compare I and 0 ;; 
+ 8: move 0, _3 
+ 9: beq _1, _3, 11 
+10: goto 16 
+11: print "0 = " 
+12: move 0, _4 
+13: outp _4 
+14: newl 
+15: goto 38 
+16: ;; Conditional execution: compare I and 1 ;; 
+17: move 1, _5 
+18: beq _1, _5, 20 
+19: goto 25 
+20: print "1 = " 
+21: move 1, _6 
+22: outp _6 
+23: newl 
+24: goto 38 
+25: ;; Conditional execution: compare I and 2 ;; 
+26: move 2, _7 
+27: beq _1, _7, 29 
+28: goto 34 
+29: print "2 = " 
+30: move 2, _8 
+31: outp _8 
+32: newl 
+33: goto 38 
+34: print "99 = " 
+35: move 99, _9 
+36: outp _9 
+37: newl 
+38: move 1, _10 
+39: move _10, _1 
+40: ;; Conditional execution: compare I and 0 ;; 
+41: move 0, _11 
+42: beq _1, _11, 44 
+43: goto 49 
+44: print "0 = " 
+45: move 0, _12 
+46: outp _12 
+47: newl 
+48: goto 71 
+49: ;; Conditional execution: compare I and 1 ;; 
+50: move 1, _13 
+51: beq _1, _13, 53 
+52: goto 58 
+53: print "1 = " 
+54: move 1, _14 
+55: outp _14 
 56: newl 
-57: move 2, %13 
-58: blt %13, 1, 60 
-59: move 2, %14 
-60: bgt %14, 5, 61 
-61: goto 64 
-62: print "Array index out of bounds" 
-63: exit 
-64: move 2, %16 
-65: sub %16, 1, %15 
-66: load ^%1, %15, %17 
-67: move 2, %18 
-68: blt %18, 1, 70 
-69: move 2, %19 
-70: bgt %19, 5, 71 
-71: goto 74 
-72: print "Array index out of bounds" 
-73: exit 
-74: move 2, %21 
-75: sub %21, 1, %20 
-76: load ^%0, %20, %22 
-77: add %17, %22, %23 
-78: print "$$t30 = " 
-79: outp %23 
+57: goto 71 
+58: ;; Conditional execution: compare I and 2 ;; 
+59: move 2, _15 
+60: beq _1, _15, 62 
+61: goto 67 
+62: print "2 = " 
+63: move 2, _16 
+64: outp _16 
+65: newl 
+66: goto 71 
+67: print "99 = " 
+68: move 99, _17 
+69: outp _17 
+70: newl 
+71: move 2, _18 
+72: move _18, _1 
+73: ;; Conditional execution: compare I and 0 ;; 
+74: move 0, _19 
+75: beq _1, _19, 77 
+76: goto 82 
+77: print "0 = " 
+78: move 0, _20 
+79: outp _20 
 80: newl 
-81: move 3, %24 
-82: blt %24, 1, 84 
-83: move 3, %25 
-84: bgt %25, 5, 85 
-85: goto 88 
-86: print "Array index out of bounds" 
-87: exit 
-88: move 3, %27 
-89: sub %27, 1, %26 
-90: load ^%1, %26, %28 
-91: move 3, %29 
-92: blt %29, 1, 94 
-93: move 3, %30 
-94: bgt %30, 5, 95 
-95: goto 98 
-96: print "Array index out of bounds" 
-97: exit 
-98: move 3, %32 
-99: sub %32, 1, %31 
-100: load ^%0, %31, %33 
-101: add %28, %33, %34 
-102: print "$$t41 = " 
-103: outp %34 
-104: newl 
-105: move 500, %35 
-106: move %35, _28 
-107: free 36 
-108: PROCEND 
-109: PROCBEGIN testb 
-110: alloc 6 
-111: print "A = " 
-112: outp ^%1 
-113: newl 
-114: print "B = " 
-115: outp ^%0 
-116: newl 
-117: print "C = " 
-118: foutp ^%5 
-119: newl 
-120: print "D = " 
-121: foutp ^%4 
-122: newl 
-123: print "E = " 
-124: foutp ^%3 
-125: newl 
-126: print "F = " 
-127: foutp ^%2 
-128: newl 
-129: free 6 
-130: PROCEND 
-131: PROCBEGIN main 
-132: alloc 203 
-133: move 1, _30 
-134: uminus _30, _29 
-135: move _29, _4 
-136: move 0, _31 
-137: move _31, _3 
-138: move 1, _32 
-139: move _32, _2 
-140: move 2, _33 
-141: move _33, _1 
-142: move 3, _34 
-143: move _34, _0 
-144: print "H = " 
-145: outp _4 
-146: newl 
-147: move 1, _36 
-148: uminus _36, _35 
-149: mul _4, _35, _37 
-150: move 3, _39 
-151: add _37, _39, _38 
-152: move _38, _4 
-153: print "H = " 
-154: outp _4 
-155: newl 
-156: move 0, _40 
-157: move 1.1, _42 
-158: fsub _40, _42, _41 
-159: move _41, _24 
-160: move 1.1, _43 
-161: move _43, _23 
-162: move 2.1, _44 
-163: move _44, _22 
-164: move 3.1, _45 
-165: move _45, _21 
-166: move 4.1, _46 
-167: move _46, _20 
-168: move 1, _47 
-169: blt _47, 1, 171 
-170: move 1, _48 
-171: bgt _48, 5, 172 
-172: goto 175 
-173: print "Array index out of bounds" 
-174: exit 
-175: move 1, _50 
-176: sub _50, 1, _49 
-177: move 1, _51 
-178: stor _51, _49, _5 
-179: move 2, _52 
-180: blt _52, 1, 182 
-181: move 2, _53 
-182: bgt _53, 5, 183 
-183: goto 186 
-184: print "Array index out of bounds" 
-185: exit 
-186: move 2, _55 
-187: sub _55, 1, _54 
-188: move 2, _56 
-189: stor _56, _54, _5 
-190: move 3, _57 
-191: blt _57, 1, 193 
-192: move 3, _58 
-193: bgt _58, 5, 194 
-194: goto 197 
-195: print "Array index out of bounds" 
-196: exit 
-197: move 3, _60 
-198: sub _60, 1, _59 
-199: move 3, _61 
-200: stor _61, _59, _5 
-201: move 4, _62 
-202: blt _62, 1, 204 
-203: move 4, _63 
-204: bgt _63, 5, 205 
-205: goto 208 
-206: print "Array index out of bounds" 
-207: exit 
-208: move 4, _65 
-209: sub _65, 1, _64 
-210: move 4, _66 
-211: stor _66, _64, _5 
-212: move 5, _67 
-213: blt _67, 1, 215 
-214: move 5, _68 
-215: bgt _68, 5, 216 
-216: goto 219 
-217: print "Array index out of bounds" 
-218: exit 
-219: move 5, _70 
-220: sub _70, 1, _69 
-221: move 5, _71 
-222: stor _71, _69, _5 
-223: move 1, _73 
-224: add _3, _73, _72 
-225: blt _72, 1, 228 
-226: bgt _72, 5, 228 
-227: goto 230 
-228: print "Array index out of bounds" 
-229: exit 
-230: sub _72, 1, _74 
-231: stor _4, _74, _10 
-232: blt _1, 1, 235 
-233: bgt _1, 5, 235 
-234: goto 237 
-235: print "Array index out of bounds" 
-236: exit 
-237: sub _1, 1, _75 
-238: stor _3, _75, _10 
-239: blt _0, 1, 242 
-240: bgt _0, 5, 242 
-241: goto 244 
-242: print "Array index out of bounds" 
-243: exit 
-244: sub _0, 1, _76 
-245: stor _2, _76, _10 
-246: blt _4, 1, 249 
-247: bgt _4, 5, 249 
-248: goto 251 
-249: print "Array index out of bounds" 
-250: exit 
-251: sub _4, 1, _77 
-252: stor _1, _77, _10 
-253: add _2, _4, _78 
-254: blt _78, 1, 257 
-255: bgt _78, 5, 257 
-256: goto 259 
-257: print "Array index out of bounds" 
-258: exit 
-259: sub _78, 1, _79 
-260: stor _0, _79, _10 
-261: blt _4, 0, 264 
-262: bgt _4, 4, 264 
-263: goto 266 
-264: print "Array index out of bounds" 
-265: exit 
-266: sub _4, 0, _80 
-267: stor _24, _80, _15 
-268: blt _3, 0, 271 
-269: bgt _3, 4, 271 
-270: goto 273 
-271: print "Array index out of bounds" 
-272: exit 
-273: sub _3, 0, _81 
-274: stor _23, _81, _15 
-275: blt _2, 0, 278 
-276: bgt _2, 4, 278 
-277: goto 280 
-278: print "Array index out of bounds" 
-279: exit 
-280: sub _2, 0, _82 
-281: stor _22, _82, _15 
-282: blt _1, 0, 285 
-283: bgt _1, 4, 285 
-284: goto 287 
-285: print "Array index out of bounds" 
-286: exit 
-287: sub _1, 0, _83 
-288: stor _21, _83, _15 
-289: blt _0, 0, 292 
-290: bgt _0, 4, 292 
-291: goto 294 
-292: print "Array index out of bounds" 
-293: exit 
-294: sub _0, 0, _84 
-295: stor _20, _84, _15 
-296: ;; Start of loop ;; 
-297: ;; Conditional execution: compare J and 6 
-298: move 6, _85 
-299: blt _2, _85, 301 
-300: goto 318 
-301: print "J = " 
-302: outp _2 
-303: newl 
-304: blt _2, 1, 307 
-305: bgt _2, 5, 307 
-306: goto 309 
-307: print "Array index out of bounds" 
-308: exit 
-309: sub _2, 1, _86 
-310: load _10, _86, _87 
-311: print "$$t101 = " 
-312: outp _87 
-313: newl 
-314: move 1, _89 
-315: add _2, _89, _88 
-316: move _88, _2 
-317: goto 296 
-318: ;; End of loop ;; 
-319: ;; Start of loop ;; 
-320: ;; Conditional execution: compare I and H 
-321: ble _3, _4, 323 
-322: goto 340 
-323: print "I = " 
-324: outp _3 
-325: newl 
-326: blt _3, 0, 329 
-327: bgt _3, 4, 329 
-328: goto 331 
-329: print "Array index out of bounds" 
-330: exit 
-331: sub _3, 0, _90 
-332: load _15, _90, _91 
-333: print "$$t105 = " 
-334: foutp _91 
-335: newl 
-336: move 1, _93 
-337: add _3, _93, _92 
-338: move _92, _3 
-339: goto 319 
-340: ;; End of loop ;; 
-341: move 1, _94 
-342: param @_94 
-343: move 4, _95 
-344: param @_95 
-345: call testi, 2 
-346: move _25, _96 
-347: print "$$TESTI_RESULT110 = " 
-348: outp _96 
-349: newl 
-350: move 1, _98 
-351: move 2, _99 
-352: add _98, _99, _97 
-353: ltof _97, _100 
-354: move 3.1, _102 
-355: fadd _100, _102, _101 
-356: move 4.3, _104 
-357: fsub _101, _104, _103 
-358: move 0.2, _106 
-359: fadd _103, _106, _105 
-360: move 5, _108 
-361: ltof _108, _107 
-362: fmul _107, _105, _109 
-363: move 4, _111 
-364: ltof _111, _110 
-365: fdiv _109, _110, _112 
-366: move _112, _20 
-367: move 5, _114 
-368: move 7, _115 
-369: mul _114, _115, _113 
-370: move _113, _0 
-371: ltof _1, _116 
-372: fmul _116, _21, _117 
-373: move _117, _21 
-374: print "X = " 
-375: foutp _20 
-376: newl 
-377: print "L = " 
-378: outp _0 
-379: newl 
-380: print "V = " 
-381: foutp _21 
-382: newl 
-383: move 3, _118 
-384: blt _118, 1, 386 
-385: move 3, _119 
-386: bgt _119, 5, 387 
-387: goto 390 
-388: print "Array index out of bounds" 
-389: exit 
-390: move 3, _121 
-391: sub _121, 1, _120 
-392: load _10, _120, _122 
-393: move 4, _124 
-394: add _122, _124, _123 
-395: move _123, _3 
-396: print "I = " 
-397: outp _3 
-398: newl 
-399: move 1, _125 
-400: blt _125, 1, 402 
-401: move 1, _126 
-402: bgt _126, 5, 403 
-403: goto 406 
-404: print "Array index out of bounds" 
-405: exit 
-406: move 1, _128 
-407: sub _128, 1, _127 
-408: move 1, _129 
-409: stor _129, _127, _10 
-410: move 2, _130 
-411: blt _130, 1, 413 
-412: move 2, _131 
-413: bgt _131, 5, 414 
-414: goto 417 
-415: print "Array index out of bounds" 
-416: exit 
-417: move 2, _133 
-418: sub _133, 1, _132 
-419: move 2, _134 
-420: stor _134, _132, _10 
-421: move 3, _135 
-422: blt _135, 1, 424 
-423: move 3, _136 
-424: bgt _136, 5, 425 
-425: goto 428 
-426: print "Array index out of bounds" 
-427: exit 
-428: move 3, _138 
-429: sub _138, 1, _137 
-430: move 3, _139 
-431: stor _139, _137, _10 
-432: move 4, _140 
-433: blt _140, 1, 435 
-434: move 4, _141 
-435: bgt _141, 5, 436 
-436: goto 439 
-437: print "Array index out of bounds" 
-438: exit 
-439: move 4, _143 
-440: sub _143, 1, _142 
-441: move 4, _144 
-442: stor _144, _142, _10 
-443: move 5, _145 
-444: blt _145, 1, 446 
-445: move 5, _146 
-446: bgt _146, 5, 447 
-447: goto 450 
-448: print "Array index out of bounds" 
-449: exit 
-450: move 5, _148 
-451: sub _148, 1, _147 
-452: move 5, _149 
-453: stor _149, _147, _10 
-454: param @_5 
-455: param @_10 
-456: call testc, 2 
-457: move _28, _150 
-458: move _150, _3 
-459: print "I = " 
-460: outp _3 
-461: newl 
-462: move 0, _151 
-463: move _151, _3 
-464: move 0, _152 
-465: move _152, _2 
-466: ;; Conditional execution: compare I and 0 
-467: move 0, _153 
-468: beq _3, _153, 470 
-469: goto 475 
-470: print "0 = " 
-471: move 0, _154 
-472: outp _154 
-473: newl 
-474: goto 497 
-475: ;; Conditional execution: compare I and 1 
-476: move 1, _155 
-477: beq _3, _155, 479 
-478: goto 484 
-479: print "1 = " 
-480: move 1, _156 
-481: outp _156 
-482: newl 
-483: goto 497 
-484: ;; Conditional execution: compare I and 2 
-485: move 2, _157 
-486: beq _3, _157, 488 
-487: goto 493 
-488: print "2 = " 
-489: move 2, _158 
-490: outp _158 
-491: newl 
-492: goto 497 
-493: print "99 = " 
-494: move 99, _159 
-495: outp _159 
-496: newl 
-497: move 1, _160 
-498: move _160, _3 
-499: ;; Conditional execution: compare I and 0 
-500: move 0, _161 
-501: beq _3, _161, 503 
-502: goto 508 
-503: print "0 = " 
-504: move 0, _162 
-505: outp _162 
-506: newl 
-507: goto 530 
-508: ;; Conditional execution: compare I and 1 
-509: move 1, _163 
-510: beq _3, _163, 512 
-511: goto 517 
-512: print "1 = " 
-513: move 1, _164 
-514: outp _164 
-515: newl 
-516: goto 530 
-517: ;; Conditional execution: compare I and 2 
-518: move 2, _165 
-519: beq _3, _165, 521 
-520: goto 526 
-521: print "2 = " 
-522: move 2, _166 
-523: outp _166 
-524: newl 
-525: goto 530 
-526: print "99 = " 
-527: move 99, _167 
-528: outp _167 
-529: newl 
-530: move 2, _168 
-531: move _168, _3 
-532: ;; Conditional execution: compare I and 0 
-533: move 0, _169 
-534: beq _3, _169, 536 
-535: goto 541 
-536: print "0 = " 
-537: move 0, _170 
-538: outp _170 
-539: newl 
-540: goto 563 
-541: ;; Conditional execution: compare I and 1 
-542: move 1, _171 
-543: beq _3, _171, 545 
-544: goto 550 
-545: print "1 = " 
-546: move 1, _172 
-547: outp _172 
-548: newl 
-549: goto 563 
-550: ;; Conditional execution: compare I and 2 
-551: move 2, _173 
-552: beq _3, _173, 554 
-553: goto 559 
-554: print "2 = " 
-555: move 2, _174 
-556: outp _174 
-557: newl 
-558: goto 563 
-559: print "99 = " 
-560: move 99, _175 
-561: outp _175 
-562: newl 
-563: move 3, _176 
-564: move _176, _3 
-565: ;; Conditional execution: compare I and 0 
-566: move 0, _177 
-567: beq _3, _177, 569 
-568: goto 574 
-569: print "0 = " 
-570: move 0, _178 
-571: outp _178 
-572: newl 
-573: goto 596 
-574: ;; Conditional execution: compare I and 1 
-575: move 1, _179 
-576: beq _3, _179, 578 
-577: goto 583 
-578: print "1 = " 
-579: move 1, _180 
-580: outp _180 
-581: newl 
-582: goto 596 
-583: ;; Conditional execution: compare I and 2 
-584: move 2, _181 
-585: beq _3, _181, 587 
-586: goto 592 
-587: print "2 = " 
-588: move 2, _182 
-589: outp _182 
-590: newl 
-591: goto 596 
-592: print "99 = " 
-593: move 99, _183 
-594: outp _183 
-595: newl 
-596: ;; Conditional execution: compare I and 0 
-597: move 0, _184 
-598: blt _3, _184, 600 
-599: goto 605 
-600: print "0 = " 
-601: move 0, _185 
-602: outp _185 
-603: newl 
-604: goto 609 
-605: print "1 = " 
-606: move 1, _186 
-607: outp _186 
-608: newl 
-609: ;; Conditional execution: compare I and J 
-610: ble _3, _2, 612 
-611: goto 617 
-612: print "0 = " 
-613: move 0, _187 
-614: outp _187 
-615: newl 
-616: goto 621 
-617: print "1 = " 
-618: move 1, _188 
-619: outp _188 
-620: newl 
-621: ;; Conditional execution: compare I and J 
-622: bne _3, _2, 624 
-623: goto 629 
-624: print "0 = " 
-625: move 0, _189 
-626: outp _189 
-627: newl 
-628: goto 633 
-629: print "1 = " 
-630: move 1, _190 
-631: outp _190 
-632: newl 
-633: ;; Conditional execution: compare I and J 
-634: bge _3, _2, 636 
-635: goto 641 
-636: print "0 = " 
-637: move 0, _191 
-638: outp _191 
-639: newl 
-640: goto 645 
-641: print "1 = " 
-642: move 1, _192 
-643: outp _192 
-644: newl 
-645: ;; Conditional execution: compare I and J 
-646: bgt _3, _2, 648 
-647: goto 653 
-648: print "0 = " 
-649: move 0, _193 
-650: outp _193 
-651: newl 
-652: goto 657 
-653: print "1 = " 
-654: move 1, _194 
-655: outp _194 
-656: newl 
-657: print "I = " 
-658: outp _3 
-659: newl 
-660: print "J = " 
-661: outp _2 
-662: newl 
-663: call externalsum, 0 
-664: move _27, _195 
-665: ltof _195, _196 
-666: move 1.1, _198 
-667: fadd _196, _198, _197 
-668: move 3.1, _199 
-669: param @_199 
-670: param @_197 
-671: call sum, 2 
-672: move _26, _200 
-673: print "$$SUM_RESULT214 = " 
-674: foutp _200 
-675: newl 
-676: move 2, _201 
-677: param @_201 
-678: move 1, _202 
-679: param @_202 
-680: param @_20 
-681: param @_20 
-682: param @_20 
-683: param @_20 
-684: call testb, 6 
-685: free 203 
-686: PROCEND 
+81: goto 104 
+82: ;; Conditional execution: compare I and 1 ;; 
+83: move 1, _21 
+84: beq _1, _21, 86 
+85: goto 91 
+86: print "1 = " 
+87: move 1, _22 
+88: outp _22 
+89: newl 
+90: goto 104 
+91: ;; Conditional execution: compare I and 2 ;; 
+92: move 2, _23 
+93: beq _1, _23, 95 
+94: goto 100 
+95: print "2 = " 
+96: move 2, _24 
+97: outp _24 
+98: newl 
+99: goto 104 
+100: print "99 = " 
+101: move 99, _25 
+102: outp _25 
+103: newl 
+104: free 26 
+105: PROCEND 

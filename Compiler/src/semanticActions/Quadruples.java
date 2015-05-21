@@ -52,11 +52,6 @@ public class Quadruples {
 		// Iterate through the quadruple array
 		for(int index = 1; index<quadArray.size(); index++){
 			String[] quadruple = quadArray.get(index);
-			// Don't print labels for code section or comments
-//			if(!quadruple[0].contains(";")){
-//				// Print label
-//				System.out.printf("%2d: ", index);
-//			}
 			System.out.printf("%2d: ", index);
 			for(int field = 0; field<quadruple.length; field++){
 				System.out.print(quadruple[field]); 

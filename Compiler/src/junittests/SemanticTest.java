@@ -43,10 +43,10 @@ public class SemanticTest {
 		ParseDriver driver = new ParseDriver("resources/pascal_files/simple.pas");
 		driver.run();
 		
-//		System.out.println();
-//		System.out.println("Mod Test");
-//		driver = new ParseDriver("resources/pascal_files/mod.pas");
-//		driver.run();
+		System.out.println();
+		System.out.println("Mod Test");
+		driver = new ParseDriver("resources/pascal_files/mod.pas");
+		driver.run();
 		
 		System.out.println();
 		System.out.println("Expression Test");

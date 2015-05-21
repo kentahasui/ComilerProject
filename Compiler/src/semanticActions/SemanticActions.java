@@ -12,7 +12,7 @@ import grammarsymbols.*;
 
 public class SemanticActions {
 	/* Flag to indicate whether or not to print contents of the stack after each action */
-	private static boolean printInfo = true;
+	private static boolean printInfo = false;
 	
 	private final int TABLE_SIZE = 37;
 	// Stack for semantic actions
@@ -40,7 +40,7 @@ public class SemanticActions {
 	
 	// Counter and prefixes for temporary variables
 	private int tempCounter;		// Counter to give unique names to a temporary variable
-	private static final String tempPrefix = "$$"; 	// Prefix for temporary variables
+	private final String tempPrefix = "$$"; 	// Prefix for temporary variables
 	
 	// Stack for number of parameters in proc declaration or call
 	private ArrayDeque<Integer> parmCount;
@@ -62,9 +62,9 @@ public class SemanticActions {
 		constantTable = new SymbolTable(TABLE_SIZE);// Create a table for constant values
 		InstallBuiltins(globalTable);	// Install built-in procedures and reserve their names
 		tempCounter = 0;				// Counter for temporary variables
-		currentFunction = null;	
+		currentFunction = null;			// Pointer to the current function
 		parmCount = new ArrayDeque<Integer>();
-		nextParm = new ArrayDeque<Integer>();
+		nextParm = new ArrayDeque<Integer>();	
 	}
 	
 	public SemanticActions(Parser parser){
@@ -125,13 +125,13 @@ public class SemanticActions {
 		quadruple[1] = getStringAddress(operand1);
 		quads.addQuad(quadruple);
 	}
-	public void generate(String tviCode, String operand1, String operand2){
-		String[] quadruple = new String[3];
-		quadruple[0] = tviCode;
-		quadruple[1] = operand1;
-		quadruple[2] = operand2;
-		quads.addQuad(quadruple);
-	}
+//	public void generate(String tviCode, String operand1, String operand2){
+//		String[] quadruple = new String[3];
+//		quadruple[0] = tviCode;
+//		quadruple[1] = operand1;
+//		quadruple[2] = operand2;
+//		quads.addQuad(quadruple);
+//	}
 	public void generate(String tviCode, String operand1, SymbolTableEntry operand2){
 		String[] quadruple = new String[3];
 		quadruple[0] = tviCode;
@@ -350,7 +350,7 @@ public class SemanticActions {
 		case 3: {
 			TokenType type = (TokenType) semanticStack.pop();
 			if(isArray){ /* Array declaration */
-		//////// Get the value of the upper bound integer constant from the stack. 
+				// Get the value of the upper bound integer constant from the stack. 
 				// If this value is not yet in the constant table, insert it. 
 				Constant upToken = (Constant) semanticStack.pop();
 				String upString = upToken.getValue();
@@ -361,7 +361,7 @@ public class SemanticActions {
 					constantTable.insert(upConstant);
 				}
 				int upperBound = upConstant.getIntValue();
-		/////// Get value of lower bound integer from the stack. Insert into constant table
+				// Get value of lower bound integer from the stack. Insert into constant table
 				Constant lowToken = (Constant) semanticStack.pop();
 				String lowString = lowToken.getValue();
 				/* Look up the string in the constant table. If not found, insert a new entry */
@@ -806,12 +806,6 @@ public class SemanticActions {
 					break;
 				}
 			}
-			// Check if array indices are in bounds
-			generate("blt", id, String.valueOf(arrEntry.getLowerBound()), String.valueOf(quads.getNextQuad()+3));
-			generate("bgt", id, String.valueOf(arrEntry.getUpperBound()), String.valueOf(quads.getNextQuad()+2));
-			generate("goto", String.valueOf(quads.getNextQuad()+3));
-			generate("print", "\"Array index out of bounds\"");
-			generate("exit");
 			// If an array is not found, or if a simple var was referenced as a simple variable
 			if(arrEntry == null){
 				VariableEntry temp = create("t", TokenType.INTEGER);
@@ -821,6 +815,13 @@ public class SemanticActions {
 				semanticStack.push(temp);
 				break;
 			}
+			// Check if array indices are in bounds
+			generate("blt", id, String.valueOf(arrEntry.getLowerBound()), String.valueOf(quads.getNextQuad()+3));
+			generate("bgt", id, String.valueOf(arrEntry.getUpperBound()), String.valueOf(quads.getNextQuad()+2));
+			generate("goto", String.valueOf(quads.getNextQuad()+4));
+			generate("print", "\"Array index out of bounds\"");
+			generate("newl");
+			generate("exit");
 			VariableEntry temp = create("t", TokenType.INTEGER);
 			// Calculate the offset into the array
 			generate("sub", temp1, String.valueOf(arrEntry.getLowerBound()), temp);
@@ -962,7 +963,7 @@ public class SemanticActions {
 			Operator op = (Operator)semanticStack.pop();
 			String tviCode = op.getTVICode(); // TVI opcode
 			SymbolTableEntry id1 = (SymbolTableEntry)semanticStack.pop();
-			generate(";; Conditional execution: compare " + id1.getName() + " and " + id2.getName());
+			generate(";; Conditional execution: compare " + id1.getName() + " and " + id2.getName() + " ;;");
 			// Check the operand types
 			int operandTypes = typeCheck(id1, id2);
 			if(operandTypes == 2){ // id1 is real and id2 is integer
@@ -1172,15 +1173,27 @@ public class SemanticActions {
 				// Branched execution depending on the types of the operands
 				if(types == 0){ // Both operands are ints
 					if(opType.equals("MOD")){ // Modulus tvi code
-						generate("print", "\" " + id1.getName() + " MOD " + id2.getName() + " \"");
-						generate("newl");
 						generate(";; " + id1.getName() + " MOD " + id2.getName() + " ;;");
+						// *** CHECK IF EACH ARGUMENT IS POSITIVE // 
+						VariableEntry val1 = create("v", TokenType.INTEGER);
+						generate("move", id1, val1);
+						VariableEntry val2 = create("v", TokenType.INTEGER);
+						generate("move", id2, val2);
+						generate("ble", val1, String.valueOf(0), String.valueOf(quads.getNextQuad()+3));
+						generate("ble", val2, String.valueOf(0), String.valueOf(quads.getNextQuad()+2));
+						generate("goto", String.valueOf(quads.getNextQuad()+4));
+						generate("print", "\"Both arguments for MOD must be positive\"");
+						generate("newl");
+						generate("exit");
+						// *** END Value check
+						
 						VariableEntry temp1 = create("t", TokenType.INTEGER);
 						generate("move", id1, temp1);
 						VariableEntry temp2 = create("t", TokenType.INTEGER);
 						generate("move", temp1, temp2);
-						generate("sub", temp2, id2, temp1);
-						generate("bge", temp1, id2, String.valueOf(quads.getNextQuad()-2)); // ******* //
+						generate("blt", temp1, val2, String.valueOf(quads.getNextQuad() + 3));
+						generate("sub", temp2, val2, temp1);
+						generate("goto", String.valueOf(quads.getNextQuad()-3));
 						semanticStack.push(temp1);
 					}
 					else if(opType.equals("/")){ // Division operation
@@ -1371,12 +1384,14 @@ public class SemanticActions {
 			parmCount.push(0);
 			nextParm.push(0);
 			semanticStack.push(eType);
-//			nextParm = ((FunctionEntry)id).getParameterInfo();
 			break;
 		}
-		case 50: { // After function call: parameters are now on stack
-			// Push each parameter onto the parameter stack.
-			// REVERSES THE ORDER OF INPUTS FOR DIFFERENT TYPES
+		case 50: { // After function call: parameters are now on semantic stack
+			/* Push each parameter onto the parameter stack.
+			 * REVERSES THE ORDER OF INPUTS FOR DIFFERENT TYPES
+			 * This is necessary for files such as "while.pas", with functions 
+			 * that have multiple parameters of different types. 
+			 */
 			TokenType prevType = ((SymbolTableEntry)semanticStack.peek()).getType();
 			boolean prevIsArray = ((SymbolTableEntry)semanticStack.peek()).isArray();
 			ArrayDeque<LinkedList<SymbolTableEntry>> stackOfLists = new ArrayDeque<LinkedList<SymbolTableEntry>>();
@@ -1397,12 +1412,6 @@ public class SemanticActions {
 					generateParam("param", id);
 				}
 			}
-			
-//			while(semanticStack.peek() instanceof SymbolTableEntry){
-//				SymbolTableEntry id = (SymbolTableEntry)semanticStack.pop();
-//				generateParam("param", id);
-//				localMemory++;
-//			}
 			EType eType = (EType)semanticStack.pop();
 			FunctionEntry function = (FunctionEntry)semanticStack.pop();
 			if(parmCount.peek() != function.getNumberOfParameters()){
@@ -1484,7 +1493,6 @@ public class SemanticActions {
 				throw SemanticError.ParameterMiscount(lexer.getLineNumber(), lexer.getCurrentLine(), functionID.getName());
 			}
 			generate("call", functionID, "0");
-			// ***** TO FIX: function.getResult.getType()??
 			VariableEntry temp = create("t", functionID.getResult().getType());
 			generate("move", functionID.getResult(), temp);
 			// Push entries onto stack
@@ -1579,7 +1587,7 @@ public class SemanticActions {
 			// Generate read statements for each parameter, in reverse order of the stack
 			while(!tempStack.empty()){
 				SymbolTableEntry id = tempStack.pop();
-				generate("print", "\"" + id.getName() + " = \"");
+				generate("print", "\"Input value for variable " + id.getName() + ": \" ");
 				// finp for real (floats)
 				if(id.getType() == TokenType.REAL){
 					generate("finp", id);
@@ -1600,7 +1608,7 @@ public class SemanticActions {
 		} 
 
 		}// End switch
-	}
+	} // End execute method
 	
 	/** Increments the integer at the top of the parmcount stack. Does nothing if stack is empty */
 	public void incrementParmCount(){

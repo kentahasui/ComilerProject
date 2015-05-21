@@ -23,12 +23,8 @@ public interface SubroutineEntry {
 	public void addParameter(ParmInfoEntry p);
 	public ParmInfoEntry getParameter(int index);
 	
-	public default boolean isFunction(){
-		return false;
-	}
-	public default boolean isProcedure(){
-		return false;
-	}
+	public boolean isFunction();
+	public boolean isProcedure();
 	
 	public void print();
 }

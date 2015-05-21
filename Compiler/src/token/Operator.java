@@ -41,6 +41,7 @@ public class Operator extends Token{
 		else if(type == TokenType.MULOP){
 			if("*".equals(s)) return "mul";
 			if("/".equals(s)) return "div";
+			if("DIV".equals(s)) return "div";
 			else return "error";
 		}
 		else return "error";
